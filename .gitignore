@@ -1,0 +1,84 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.matplotlib/
+.coverage
+.coverage.*
+htmlcov/
+
+# Python packaging and environments
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+
+# Conda
+.conda/
+conda-meta/
+*.conda
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.code-workspace
+*.iml
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary and log files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+*.log
+
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Downloaded and generated datasets
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/neso/
+data/raw/neso/*
+!data/raw/neso/source_manifest.json
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated model artefacts
+models/*
+!models/.gitkeep
+*.joblib
+*.pkl
+*.pickle
+
+# Generated outputs; small examples may live elsewhere under outputs/
+outputs/figures/*
+!outputs/figures/.gitkeep
+outputs/forecasts/*
+!outputs/forecasts/.gitkeep
+outputs/metrics/*
+!outputs/metrics/.gitkeep

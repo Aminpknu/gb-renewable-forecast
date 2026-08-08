@@ -1,0 +1,30 @@
+{
+  "dataset": "NESO Historic Demand Data",
+  "official_dataset_page": "https://www.neso.energy/data-portal/historic-demand-data",
+  "sources": [
+    {
+      "year": 2024,
+      "official_source_url": "https://api.neso.energy/dataset/8f2fe0af-871c-488d-8bad-960426f24601/resource/f6d02c0f-957b-48cb-82ee-09003f2ba759/download/demanddata_2024.csv",
+      "retrieval_timestamp_utc": "2026-08-08T21:49:37.047760+00:00",
+      "local_filename": "demanddata_2024.csv",
+      "file_size_bytes": 1809707,
+      "sha256": "fa7895b6e9ab5eb1b450949d969cb18ffeb6005359fc71c79c87e1c47e59cac6"
+    },
+    {
+      "year": 2025,
+      "official_source_url": "https://api.neso.energy/dataset/8f2fe0af-871c-488d-8bad-960426f24601/resource/b2bde559-3455-4021-b179-dfe60c0337b0/download/demanddata_2025.csv",
+      "retrieval_timestamp_utc": "2026-08-08T21:49:39.106222+00:00",
+      "local_filename": "demanddata_2025.csv",
+      "file_size_bytes": 1869771,
+      "sha256": "8b8be946bbb084bc28fbf95a71fad0fceb5543b98e02755235130a42beaee4e0"
+    },
+    {
+      "year": 2026,
+      "official_source_url": "https://api.neso.energy/dataset/8f2fe0af-871c-488d-8bad-960426f24601/resource/8a4a771c-3929-4e56-93ad-cdf13219dea5/download/demanddataupdate_2026.csv",
+      "retrieval_timestamp_utc": "2026-08-08T21:49:41.101349+00:00",
+      "local_filename": "demanddataupdate_2026.csv",
+      "file_size_bytes": 1018296,
+      "sha256": "ea876cee08cc991bc12dc07524496c8f38347e4fbabe16bddbae2ff9cd8eb465"
+    }
+  ]
+}
