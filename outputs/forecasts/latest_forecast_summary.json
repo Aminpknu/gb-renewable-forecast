@@ -11,10 +11,10 @@
   "solar_capacity_mw": 23301.0,
   "peak_wind_mw": 1373.3474957048893,
   "peak_wind_valid_time_local": "2026-08-10T00:00:00+01:00",
-  "peak_solar_mw": 12697.966325423795,
+  "peak_solar_mw": 12697.966325423797,
   "peak_solar_valid_time_local": "2026-08-10T13:00:00+01:00",
   "total_forecast_wind_energy_mwh": 17821.52056537941,
-  "total_forecast_solar_energy_mwh": 101303.5632658921,
+  "total_forecast_solar_energy_mwh": 101303.56326589208,
   "models": {
     "wind": "XGBoost",
     "solar": "ExtraTrees"
