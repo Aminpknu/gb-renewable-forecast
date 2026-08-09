@@ -4,7 +4,16 @@ A reproducible Python forecasting system for Great Britain's **embedded** wind a
 
 ## Live Demo
 
-[Live Dash app — deployment pending]
+**[Open the live GB Renewable Forecast dashboard](https://gb-renewable-forecast.onrender.com)**
+
+The dashboard provides:
+- Live day-ahead embedded wind and solar generation forecasts
+- Half-hourly forecast values and capacity factors
+- Historical forecast-vs-actual performance
+- Locked out-of-sample model evaluation
+- Methodology and data-source documentation
+
+> Note: The app is hosted on Render's free tier, so the first load after a period of inactivity may take around a minute while the service wakes up.
 
 ## Headline Results
 
