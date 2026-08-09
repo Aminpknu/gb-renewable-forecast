@@ -169,7 +169,7 @@ def build_forecast_content(
                             html.P("Forecast context", className="eyebrow"),
                             html.H2("Model and source contract"),
                             html.P(
-                                "The dashboard presents Stage 7 outputs; it does not call live APIs or load models during page navigation.",
+                                "The dashboard displays pre-generated daily forecast outputs without loading models or calling live APIs during page navigation.",
                                 className="section-intro",
                             ),
                         ],
