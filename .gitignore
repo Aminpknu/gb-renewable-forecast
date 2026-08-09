@@ -63,6 +63,10 @@ data/raw/*
 !data/raw/neso/
 data/raw/neso/*
 !data/raw/neso/source_manifest.json
+!data/raw/weather/
+data/raw/weather/*
+!data/raw/weather/source_manifest.json
+!data/raw/weather/excluded_target_dates.json
 data/interim/*
 !data/interim/.gitkeep
 data/processed/*

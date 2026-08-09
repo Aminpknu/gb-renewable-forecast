@@ -27,3 +27,25 @@ The canonical observation key is (`settlement_date`, `settlement_period`). Stage
 ## Evaluation contract
 
 Evaluation will be chronological. Random train/test splitting will not be used. Simple wind and solar baselines must be established before machine-learning models are evaluated.
+
+## Archived weather forecast contract
+
+Stage 3 uses individual **ECMWF IFS HRES 9 km** forecasts from the official Open-Meteo Single Runs API (`https://single-runs-api.open-meteo.com/v1/forecast`). The exact API model identifier is `ecmwf_ifs`. This is an archived model-run product, not Open-Meteo's stitched historical-weather product and not realised or reanalysis weather.
+
+For target local calendar day D:
+
+- select the ECMWF run initialized at 00:00 UTC on D−1;
+- record that initialization as `weather_run_init_utc`;
+- record the distinct nominal project issue time as 09:00 `Europe/London` on D−1 in `nominal_forecast_issue_time_local`;
+- retain hourly valid times covering all of local day D plus the closing local-midnight boundary needed for later interpolation; and
+- calculate `forecast_lead_hours` from model-run initialization to valid time.
+
+Initialization time identifies the model cycle. It is not the model's public availability time and is not interchangeable with the nominal issue time. The 00 UTC cycle is selected because it is initialized sufficiently before the nominal 09:00 local issue and prevents use of a later run.
+
+Weather is sampled at ten fixed representative GB locations defined in `config/weather_locations.json`. These are geographic sampling points and are **not** claimed to be renewable-capacity-weighted sites. UTC is the canonical weather time; `valid_time_local` is also retained with `Europe/London` daylight-saving rules. Hourly weather will be interpolated to the NESO half-hour UTC valid times only in Stage 4.
+
+### Portfolio MVP archive scope and exclusions
+
+The accepted archived-weather modelling period is 2024-04-01 through 2025-08-31. Later archived forecasts are intentionally not required for the portfolio MVP. Official source exclusions are recorded in `data/raw/weather/excluded_target_dates.json`; excluded days are absent from the clean dataset and are never filled or synthesized.
+
+The documented exclusions are target dates 2025-08-06 through 2025-08-10. Four required ECMWF IFS HRES 00 UTC runs were reported as `modelRunUnavailable` by the official Single Runs API. The remaining run reproducibly returned nulls for six required weather variables at all ten locations. Consistent-model integrity and leakage safety take precedence over silently substituting another model, run cycle, realised weather, interpolation, or synthetic data.

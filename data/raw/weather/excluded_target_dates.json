@@ -1,0 +1,53 @@
+[
+  {
+    "target_date": "2025-08-06",
+    "required_weather_run_init_utc": "2025-08-05T00:00:00+00:00",
+    "weather_model": "ECMWF IFS HRES 9 km",
+    "weather_model_api_identifier": "ecmwf_ifs",
+    "api_error": "modelRunUnavailable",
+    "reason": "The required official ECMWF IFS HRES 00 UTC archived run was unavailable from the Open-Meteo Single Runs API.",
+    "exclusion_decision": "Exclude the target date; do not substitute another model, run cycle, realised weather, interpolation, or synthetic data."
+  },
+  {
+    "target_date": "2025-08-07",
+    "required_weather_run_init_utc": "2025-08-06T00:00:00+00:00",
+    "weather_model": "ECMWF IFS HRES 9 km",
+    "weather_model_api_identifier": "ecmwf_ifs",
+    "api_error": "modelRunUnavailable",
+    "reason": "The required official ECMWF IFS HRES 00 UTC archived run was unavailable from the Open-Meteo Single Runs API.",
+    "api_response": "Unexpected error while streaming data: modelRunUnavailable(model: App.DomainRegistry.ecmwf_ifs, run: App.Timestamp(timeIntervalSince1970: 1754438400))",
+    "exclusion_decision": "Exclude the target date; do not substitute another model, run cycle, realised weather, interpolation, or synthetic data.",
+    "recorded_at_utc": "2026-08-09T09:01:51.534467+00:00"
+  },
+  {
+    "target_date": "2025-08-08",
+    "required_weather_run_init_utc": "2025-08-07T00:00:00+00:00",
+    "weather_model": "ECMWF IFS HRES 9 km",
+    "weather_model_api_identifier": "ecmwf_ifs",
+    "api_error": "required_variables_unavailable",
+    "reason": "The official archived run returned null values for temperature, 100 m wind speed and direction, cloud cover, shortwave radiation, and instantaneous shortwave radiation for all ten locations and all returned hours. A repeat official API request reproduced the same null fields.",
+    "exclusion_decision": "Exclude the target date; do not substitute another model, run cycle, realised weather, interpolation, or synthetic data."
+  },
+  {
+    "target_date": "2025-08-09",
+    "required_weather_run_init_utc": "2025-08-08T00:00:00+00:00",
+    "weather_model": "ECMWF IFS HRES 9 km",
+    "weather_model_api_identifier": "ecmwf_ifs",
+    "api_error": "modelRunUnavailable",
+    "reason": "The required official ECMWF IFS HRES 00 UTC archived run was unavailable from the Open-Meteo Single Runs API.",
+    "api_response": "Unexpected error while streaming data: modelRunUnavailable(model: App.DomainRegistry.ecmwf_ifs, run: App.Timestamp(timeIntervalSince1970: 1754611200))",
+    "exclusion_decision": "Exclude the target date; do not substitute another model, run cycle, realised weather, interpolation, or synthetic data.",
+    "recorded_at_utc": "2026-08-09T09:01:54.947842+00:00"
+  },
+  {
+    "target_date": "2025-08-10",
+    "required_weather_run_init_utc": "2025-08-09T00:00:00+00:00",
+    "weather_model": "ECMWF IFS HRES 9 km",
+    "weather_model_api_identifier": "ecmwf_ifs",
+    "api_error": "modelRunUnavailable",
+    "reason": "The required official ECMWF IFS HRES 00 UTC archived run was unavailable from the Open-Meteo Single Runs API.",
+    "api_response": "Unexpected error while streaming data: modelRunUnavailable(model: App.DomainRegistry.ecmwf_ifs, run: App.Timestamp(timeIntervalSince1970: 1754697600))",
+    "exclusion_decision": "Exclude the target date; do not substitute another model, run cycle, realised weather, interpolation, or synthetic data.",
+    "recorded_at_utc": "2026-08-09T09:01:55.114259+00:00"
+  }
+]

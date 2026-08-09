@@ -1,0 +1,102 @@
+{
+  "source": "Open-Meteo Single Runs API",
+  "endpoint": "https://single-runs-api.open-meteo.com/v1/forecast",
+  "weather_model": "ECMWF IFS HRES 9 km",
+  "exact_model_api_identifier": "ecmwf_ifs",
+  "archive_data_access_description": "Individual archived model runs selected by UTC initialization using the Open-Meteo Single Runs API; not stitched historical weather or reanalysis.",
+  "retrieval_date_utc": "2026-08-09T09:08:43.417283+00:00",
+  "variables": [
+    "temperature_2m",
+    "pressure_msl",
+    "wind_speed_100m",
+    "wind_direction_100m",
+    "cloud_cover",
+    "shortwave_radiation",
+    "shortwave_radiation_instant"
+  ],
+  "units": {
+    "temperature_2m": "\u00b0C",
+    "pressure_msl": "hPa",
+    "wind_speed_100m": "m/s",
+    "wind_direction_100m": "\u00b0",
+    "cloud_cover": "%",
+    "shortwave_radiation": "W/m\u00b2",
+    "shortwave_radiation_instant": "W/m\u00b2"
+  },
+  "locations": [
+    {
+      "name": "Inverness",
+      "latitude": 57.4778,
+      "longitude": -4.2247
+    },
+    {
+      "name": "Edinburgh",
+      "latitude": 55.9533,
+      "longitude": -3.1883
+    },
+    {
+      "name": "Newcastle",
+      "latitude": 54.9783,
+      "longitude": -1.6178
+    },
+    {
+      "name": "Manchester",
+      "latitude": 53.4808,
+      "longitude": -2.2426
+    },
+    {
+      "name": "Leeds",
+      "latitude": 53.8008,
+      "longitude": -1.5491
+    },
+    {
+      "name": "Birmingham",
+      "latitude": 52.4862,
+      "longitude": -1.8904
+    },
+    {
+      "name": "Norwich",
+      "latitude": 52.6309,
+      "longitude": 1.2974
+    },
+    {
+      "name": "Cardiff",
+      "latitude": 51.4816,
+      "longitude": -3.1791
+    },
+    {
+      "name": "Bristol",
+      "latitude": 51.4545,
+      "longitude": -2.5879
+    },
+    {
+      "name": "London",
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    }
+  ],
+  "location_note": "Fixed representative GB sampling locations; not claimed to be renewable-capacity-weighted sites.",
+  "run_convention": "daily 00:00 UTC",
+  "nominal_project_forecast_issue_time": "09:00 Europe/London",
+  "request_template": {
+    "models": "ecmwf_ifs",
+    "run": "{YYYY-MM-DD}T00:00",
+    "forecast_hours": 49,
+    "timezone": "GMT",
+    "wind_speed_unit": "ms",
+    "temperature_unit": "celsius",
+    "hourly": "temperature_2m,pressure_msl,wind_speed_100m,wind_direction_100m,cloud_cover,shortwave_radiation,shortwave_radiation_instant",
+    "latitude": "comma-separated values from config/weather_locations.json",
+    "longitude": "comma-separated values from config/weather_locations.json"
+  },
+  "requested_run_count": 518,
+  "first_requested_run_utc": "2024-03-31T00:00:00+00:00",
+  "last_requested_run_utc": "2025-08-30T00:00:00+00:00",
+  "successful_run_count": 513,
+  "failed_run_count": 0,
+  "missing_run_count": 0,
+  "official_archive_unavailable_count": 5,
+  "excluded_target_dates_file": "data/raw/weather/excluded_target_dates.json",
+  "portfolio_mvp_archive_scope": "Target dates 2024-04-01 through 2025-08-31 only; later archived forecasts are intentionally not required for the portfolio MVP.",
+  "run_inventory_file": "data/raw/weather/run_inventory.json"
+}
