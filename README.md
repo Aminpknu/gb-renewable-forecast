@@ -1,76 +1,160 @@
 # GB Embedded Wind & Solar Day-Ahead Forecasting
 
-## Purpose
+A reproducible Python forecasting system for Great Britain's **embedded** wind and solar generation. It combines official NESO generation and capacity data with leakage-safe ECMWF IFS HRES weather forecasts, produces every half-hour settlement period of the following UK calendar day, and presents operational outputs in a public-facing Plotly Dash application.
 
-This project will provide a reproducible energy data science pipeline for forecasting embedded wind and solar generation in Great Britain. It is intended to demonstrate professional practice in power-data processing, time-series forecasting, leakage-safe machine learning, evaluation, and software engineering.
+## Live Demo
 
-## Forecasting objective
+[Live Dash app — deployment pending]
 
-Produce separate forecasts of Great Britain embedded wind generation and embedded solar generation for every settlement period in the next calendar day.
+## Headline Results
 
-- **Forecast horizon:** next calendar day
-- **Temporal resolution:** 30 minutes (normally 48 periods; 46/50 on GB daylight-saving transition days)
-- **Targets:** separate wind and solar generation forecasts
+The selected models were chosen on a chronological validation period. The results below come from the previously untouched June–August 2025 test period and were locked before production refitting.
 
-Forecast issue time and forecast valid time will be represented explicitly throughout the pipeline.
+| Target | Model | Test MAE | Test R2 | Skill vs monthly climatology |
+|---|---|---:|---:|---:|
+| Embedded wind generation | XGBoost | 296.6 MW | 0.868 | 66.4% lower MAE |
+| Embedded solar generation | ExtraTrees | 425.4 MW | 0.955 | 42.0% lower MAE |
 
-## Data sources
+The system forecasts embedded generation only; it is not a forecast of all GB renewable output.
 
-The project uses or is expected to use:
+## What the system does
 
-- Official NESO Historic Demand Data for estimated embedded wind and solar generation and embedded capacity. Stage 2 covers 1 April 2024 to 30 June 2026, the latest complete month detected in the downloaded 2026 source.
-- Historical installed wind and solar capacity from the same NESO files for target normalisation and interpretation.
-- Individual ECMWF IFS HRES 9 km archived forecasts from the official Open-Meteo Single Runs API, selected with the exact model identifier `ecmwf_ifs` and explicit 00 UTC run initialization.
-- Official NESO Daily Demand Update for live embedded wind and solar capacity, with an explicit local-official-data fallback when the live source is unavailable.
+```text
+ECMWF archived/live weather forecast
+              |
+              v
+Leakage-safe half-hour feature engineering
+              |
+              v
+Separate wind and solar ML models
+              |
+              v
+Predicted capacity factor (bounded for inference)
+              |
+              v
+Official NESO embedded capacity
+              |
+              v
+46 / 48 / 50-period day-ahead MW forecast
+```
 
-The weather inputs are archived or live model forecasts, not realised/reanalysis weather.
+Operational convention:
 
-## Live day-ahead forecast
+- nominal issue time: 09:00 `Europe/London`;
+- weather run: issue-date 00 UTC ECMWF IFS HRES;
+- target: every physical settlement period of the following local calendar day; and
+- production models: XGBoost for wind and ExtraTrees for solar.
 
-Run the production-style inference pipeline with:
+The forecast CLI and dashboard are intentionally separate. `python -m src.forecast_tomorrow` retrieves official inputs, loads the saved models, and writes small forecast outputs. The Dash process displays those outputs without loading the large estimators or calling live APIs during navigation.
+
+## Data Sources
+
+- **Generation and capacity:** official National Energy System Operator (NESO) Historic Demand Data and Daily Demand Update.
+- **Weather:** ECMWF IFS HRES 9 km through the official Open-Meteo Single Runs API, using the exact API identifier `ecmwf_ifs`.
+- **Weather sampling:** ten fixed representative GB locations. They are not claimed to be renewable-capacity-weighted sites.
+
+Raw downloads are preserved locally with provenance and are excluded from the public repository.
+
+## Leakage-safe backtesting
+
+Historical features use individual archived weather forecasts that could have been available at the nominal forecast issue time. Realised future weather and Open-Meteo's stitched historical-weather product are not substituted. Weather-run initialization, nominal issue time, forecast valid time, and settlement time remain explicit and distinct.
+
+Evaluation is chronological:
+
+- training: 1 April 2024 to 31 March 2025;
+- validation: 1 April 2025 to 31 May 2025; and
+- untouched test: 1 June 2025 to 31 August 2025.
+
+The usable modelling archive spans 1 April 2024 to 31 August 2025. Five individual official-source exclusions—6 to 10 August 2025—are documented in `data/raw/weather/excluded_target_dates.json`. No alternative model, later run cycle, realised weather, or synthetic rows were used to fill them. The production fit uses 24,624 half-hour rows across 513 available target days.
+
+## Dashboard
+
+The Plotly Dash Pages application provides:
+
+- a live-output forecast page with KPI cards, an interactive chart, full settlement table, and CSV download;
+- a performance page sourced from locked untouched-test metrics;
+- a date-selectable historical explorer containing only real test dates; and
+- a recruiter-friendly methodology and limitations page.
+
+It supports 46-, 48-, and 50-settlement-period target days and exposes `server = app.server` for deployment.
+
+## Repository Structure
+
+```text
+app.py                         Dash entrypoint
+pages/                         Forecast, performance, history, methodology
+app_utils/                     Cached loaders, figures, formatting and theme
+assets/styles.css              Responsive application styling
+config/weather_locations.json  Ten representative GB locations
+src/data/                      NESO/weather ingestion and validation
+src/features/                  Shared training/inference features
+src/models/                    Training workflow retained for reproducibility
+src/forecast_tomorrow.py       Production-style live inference CLI
+models/                        Production models and metadata
+outputs/forecasts/             Small public latest-forecast outputs
+outputs/metrics/               Locked test metrics and predictions
+tests/                         Offline transformation, inference and app tests
+render.yaml                    Render service definition (not deployed)
+.github/workflows/             Prepared daily forecast automation
+```
+
+Large raw archives, modelling datasets, caches, and general generated outputs remain ignored.
+
+## Run Locally
+
+PowerShell example:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Generate or replay a day-ahead forecast:
 
 ```powershell
 python -m src.forecast_tomorrow
 python -m src.forecast_tomorrow --issue-date 2026-08-09
 ```
 
-The command uses the issue-date 00 UTC ECMWF IFS HRES run for every settlement period of the following `Europe/London` calendar day. It loads the saved XGBoost wind and ExtraTrees solar models without retraining, applies the shared Stage 4 feature functions in metadata order, retrieves official NESO embedded capacities, and writes a dated CSV, `latest_forecast.csv`, a JSON summary, and one diagnostic figure. DST days produce 46 or 50 rows automatically.
+Launch the dashboard:
 
-## Planned modelling stages
+```powershell
+python app.py
+```
 
-1. Define the forecast issue schedule, valid periods, targets, and evaluation protocol.
-2. Ingest and validate generation, capacity, calendar, and archived weather-forecast data.
-3. Establish simple leakage-safe baseline forecasts.
-4. Engineer wind and solar features separately using only information available at issue time.
-5. Train candidate machine-learning models with chronological validation.
-6. Evaluate wind and solar forecasts separately against the baselines.
-7. Package reproducible forecasting and reporting workflows.
-8. Later, add data storage, automation, continuous integration, and an interactive application when explicitly requested.
+Open `http://127.0.0.1:8050`. A future Linux deployment can start the app with `gunicorn app:server`.
 
-## Reproducibility principles
+The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, scikit-learn 1.9.0, XGBoost 3.4.0, and joblib 1.5.3. The solar estimator uses lossless joblib lzma level-3 compression; prediction equivalence and packaging details are recorded in `docs/model_packaging.md`.
 
-- Preserve raw source data unchanged and record its provenance.
-- Keep timestamps, timezones, forecast issue times, and valid times explicit.
-- Prevent target and weather-information leakage.
-- Use chronological train, validation, and test periods rather than random splits.
-- Keep transformations in reusable, tested Python modules.
-- Record dependencies, configuration, modelling assumptions, and evaluation definitions.
-- Investigate and report missing, invalid, or physically suspicious observations rather than silently changing them.
+## Testing
 
-## Current project status
+Run all offline tests with:
 
-- **Stage 1 — project setup: complete.** Repository structure, dependencies, development instructions, and import smoke testing are in place.
-- **Stage 2 — NESO target ingestion: complete.** Official NESO Historic Demand Data for 2024–2026 has been preserved with hashes and provenance. The cleaned target dataset contains estimated embedded wind/solar generation, capacity, and observed capacity factors from 1 April 2024 through the latest complete month, June 2026.
-- **Stage 3 — archived weather ingestion: complete for the portfolio MVP with documented source exclusions.** The clean hourly dataset covers target dates from 1 April 2024 through 31 August 2025 at ten representative GB locations, using 513 validated daily 00 UTC ECMWF IFS HRES runs. Five target dates (6–10 August 2025) are explicitly excluded in `data/raw/weather/excluded_target_dates.json`: four required runs were reported as `modelRunUnavailable`, while the 7 August run reproducibly returned nulls for six required variables. No alternative model, run cycle, realised weather, interpolation, or synthetic rows were substituted. Later archived forecasts are intentionally outside the portfolio MVP scope.
-- **Stages 4–7A — modelling: complete.** Leakage-safe half-hour weather features, chronological splits, baselines, model comparison, locked untouched-test evaluation, and production fitting are complete. The selected production models are XGBoost for wind and ExtraTrees for solar. Locked test MAE is 296.643 MW for wind and 425.410 MW for solar; these metrics are preserved in `models/model_metadata.json` and are not recalculated by live inference.
-- **Stage 7B — live inference: complete.** Training and serving share the same weather transformations. Historical parity for 16 January 2025 matches all features to floating-point precision. The live CLI preserves distinct model-run initialization, nominal issue, and valid times; uses official live weather and capacity sources; validates feature order and physical ranges; and produces DST-safe forecasts and summaries without retraining.
+```powershell
+python -m pytest -q
+```
 
-Observed capacity factors are calculated as estimated embedded generation divided by the corresponding NESO embedded capacity. Observations are quality-checked and reported without clipping. The canonical key is settlement date plus settlement period; timezone-aware `Europe/London` and UTC valid times explicitly preserve 46-period spring and 50-period autumn daylight-saving days.
+Routine tests use mocked API payloads where network behaviour matters. Importing or navigating the Dash app does not call Open-Meteo or NESO.
 
-Weather model initialization, nominal project issue time, and forecast valid time remain separate fields. The weather inputs are individual archived forecasts rather than realised/reanalysis weather or Open-Meteo's stitched historical-weather product. The ten locations are representative sampling points, not renewable-capacity-weighted sites. Hourly weather is interpolated independently within each local target day to the canonical half-hour settlement timestamps.
+## Deployment Preparation
 
-The live pipeline is implemented and tested. Streamlit, SQL, GitHub Actions, and later application stages have not started.
+`render.yaml` defines a free-plan-compatible Python web service with a health check and `gunicorn app:server` start command; it has not been deployed. The prepared GitHub Actions workflow uses two UTC schedules plus a `Europe/London` local-hour gate so only one daily run proceeds across GMT/BST. It persists only the small dashboard forecast CSV and summary JSON.
 
-## Model compatibility
+The compressed 99,540,687-byte solar artefact is below GitHub's normal per-file limit, so Git LFS is not required. The workflow uses ordinary checkout and does not stage raw live weather responses.
 
-The saved production artefacts were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, scikit-learn 1.9.0, XGBoost 3.4.0, and joblib 1.5.3. These versions are recorded in `models/model_metadata.json`; broad dependency upgrades should be avoided when loading the saved models.
+## Limitations
+
+- Weather uses ten representative GB locations rather than renewable-capacity-weighted grid cells.
+- Forecasts cover embedded wind and solar generation, not all transmission-connected renewable generation.
+- Accuracy varies by weather regime and individual day.
+- The application displays the most recently generated output; it does not claim continuous operational availability.
+- This is a portfolio and research demonstration, not a production trading forecast.
+
+## Disclaimer
+
+This project is for portfolio, educational, and research purposes. It is not trading, operational dispatch, or investment advice.
+
+## Project Status
+
+Stages 1–7 are complete. Stage 8 adds the tested local Dash application, lossless model packaging, and deployment/automation preparation. No GitHub remote, external deployment, SQL service, or paid cloud resource has been created.

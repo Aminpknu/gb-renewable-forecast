@@ -1,8 +1,11 @@
-pandas
-numpy
+dash==4.4.1
+plotly==6.9.0
+gunicorn==26.0.0
+pandas==3.0.5
+numpy==2.5.1
 requests
 matplotlib
-scikit-learn
-joblib
-xgboost
+scikit-learn==1.9.0
+joblib==1.5.3
+xgboost==3.4.0
 pytest

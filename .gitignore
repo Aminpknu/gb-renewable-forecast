@@ -79,11 +79,26 @@ models/*
 *.joblib
 *.pkl
 *.pickle
+!models/wind_xgboost.joblib
+!models/solar_extratrees.joblib
 
 # Generated outputs; small examples may live elsewhere under outputs/
 outputs/figures/*
 !outputs/figures/.gitkeep
+!outputs/figures/wind_test_forecast_vs_actual.png
+!outputs/figures/solar_test_forecast_vs_actual.png
+!outputs/figures/model_vs_baseline_mae.png
 outputs/forecasts/*
 !outputs/forecasts/.gitkeep
+!outputs/forecasts/latest_forecast.csv
+!outputs/forecasts/latest_forecast_summary.json
 outputs/metrics/*
 !outputs/metrics/.gitkeep
+!outputs/metrics/final_test_metrics.csv
+!outputs/metrics/final_test_predictions.csv
+!outputs/metrics/daily_test_metrics.csv
+
+# Local machine and deployment scratch state
+.DS_Store
+*.lnk
+.render/

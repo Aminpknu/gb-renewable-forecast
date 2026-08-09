@@ -40,6 +40,15 @@
   "solar_model": {
     "algorithm": "ExtraTrees",
     "target": "solar_cf",
+    "serialization": {
+      "format": "joblib",
+      "compression": "lzma level 3",
+      "original_size_bytes": 337998881,
+      "compressed_size_bytes": 99540687,
+      "equivalence_sample_rows": 512,
+      "max_abs_prediction_difference": 0.0,
+      "note": "Lossless packaging of the same fitted estimator; no retraining or metric changes."
+    },
     "features": [
       "radiation_mean",
       "radiation_max",

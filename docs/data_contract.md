@@ -59,3 +59,9 @@ Live feature engineering uses the same reusable functions as Stage 4: direction 
 Embedded wind and solar capacities come from the official NESO Daily Demand Update resource. Target-date capacities are preferred, otherwise the latest valid published capacities are used. If the live source is unavailable, only the latest valid capacity from the project's local official NESO target dataset may be used, with an explicit warning and fallback provenance. NESO generation forecasts are never model features.
 
 Saved model capacity-factor predictions are bounded to [0, 1] and converted to MW using the selected positive capacities. Solar generation is forced to zero only where the same live weather feature matrix reports no incoming shortwave radiation. Energy summaries integrate each settlement-period MW value over 0.5 hours, including 46- and 50-period DST days.
+
+## Public application contract
+
+The Stage 8 Plotly Dash application is a presentation layer over the small Stage 7 forecast outputs and locked historical evaluation files. Ordinary app imports and page navigation do not load the production estimators, call Open-Meteo, call NESO, regenerate forecasts, or alter locked metrics. Live inference remains the separate `python -m src.forecast_tomorrow` command.
+
+The UI derives its settlement table length from the forecast file and therefore supports 46-, 48-, and 50-period days. Historical date controls contain only dates present in the locked test predictions; documented source exclusions are not synthesized for visual continuity.
