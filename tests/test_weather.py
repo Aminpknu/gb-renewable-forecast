@@ -293,8 +293,19 @@ def test_sustained_http_429_raises_rate_limit_error(
         )
 
 
-def test_official_archive_exclusion_is_listed_and_not_processed() -> None:
-    all_mvp_runs, exclusions = derive_mvp_run_dates()
+def test_official_archive_exclusion_is_listed_and_not_processed(
+    tmp_path: Path,
+) -> None:
+    target_path = tmp_path / "mvp_target_dates.csv"
+    pd.DataFrame(
+        {
+            "settlement_date": pd.date_range(
+                "2024-04-01", "2025-08-31", freq="D"
+            )
+        }
+    ).to_csv(target_path, index=False)
+
+    all_mvp_runs, exclusions = derive_mvp_run_dates(target_path)
     available_runs = filter_excluded_run_dates(all_mvp_runs, exclusions)
     excluded_target_dates = {item["target_date"] for item in exclusions}
     excluded_run_dates = {

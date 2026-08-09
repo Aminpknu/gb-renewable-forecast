@@ -120,9 +120,11 @@ def load_excluded_target_dates() -> list[dict[str, Any]]:
     return json.loads(EXCLUDED_TARGET_DATES_PATH.read_text(encoding="utf-8"))
 
 
-def derive_mvp_run_dates() -> tuple[pd.DatetimeIndex, list[dict[str, Any]]]:
+def derive_mvp_run_dates(
+    target_path: Path = TARGET_DATA_PATH,
+) -> tuple[pd.DatetimeIndex, list[dict[str, Any]]]:
     """Return all required MVP run dates and their documented exclusions."""
-    run_dates = derive_required_run_dates()
+    run_dates = derive_required_run_dates(target_path)
     first_run = (MVP_FIRST_TARGET_DATE - pd.Timedelta(days=1)).tz_localize("UTC")
     last_run = (MVP_LAST_TARGET_DATE - pd.Timedelta(days=1)).tz_localize("UTC")
     selected = run_dates[(run_dates >= first_run) & (run_dates <= last_run)]
