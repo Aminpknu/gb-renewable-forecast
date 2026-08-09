@@ -166,4 +166,4 @@ This project is for portfolio, educational, and research purposes. It is not tra
 
 ## Project Status
 
-Stages 1–7 are complete. Stage 8 adds the tested local Dash application, lossless model packaging, and deployment/automation preparation. No GitHub remote, external deployment, SQL service, or paid cloud resource has been created.
+The project is fully implemented and publicly deployed as an end-to-end portfolio demonstration of GB day-ahead renewable generation forecasting.
