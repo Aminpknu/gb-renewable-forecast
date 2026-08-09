@@ -13,7 +13,7 @@ try:
     print("xgboost:", xgboost.__version__)
 except ImportError:
     print("XGBoost is not installed")
-    
+
 import xgboost
 print("XGBoost:", xgboost.__version__)
 

@@ -6,6 +6,14 @@
     "rows": 24624,
     "target_days": 513
   },
+  "serialization_environment": {
+    "python": "3.12.13",
+    "numpy": "2.5.1",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.4.0",
+    "joblib": "1.5.3"
+  },
   "wind_model": {
     "algorithm": "XGBoost",
     "target": "wind_cf",

@@ -15,6 +15,15 @@ import json
 import numpy as np
 import pandas as pd
 
+from src.features.weather_features import (
+    SOLAR_FEATURES,
+    WIND_FEATURES,
+    add_calendar_features,
+    add_wind_direction_components,
+    aggregate_weather_locations,
+    interpolate_hourly_weather,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 TARGET_FILE = (
@@ -145,12 +154,7 @@ print("Target rows after exclusions:", len(targets))
 
 #%% 6. Convert wind direction to vector components
 
-theta = np.deg2rad(
-    weather["wind_direction_100m_deg"]
-)
-
-weather["wind_dir_sin"] = np.sin(theta)
-weather["wind_dir_cos"] = np.cos(theta)
+weather = add_wind_direction_components(weather)
 
 print(
     weather[
@@ -174,66 +178,7 @@ WEATHER_VARS = [
     "wind_dir_cos",
 ]
 
-interpolated_groups = []
-
-for (location, target_date), group in weather.groupby(
-    ["location_name", "target_date"]
-):
-
-    # Get only the NESO half-hour timestamps belonging
-    # to this same target day
-    target_times = (
-        targets.loc[
-            targets["settlement_date"] == target_date,
-            "valid_time_utc"
-        ]
-        .drop_duplicates()
-        .sort_values()
-    )
-
-    # Excluded target dates will have no target timestamps
-    if len(target_times) == 0:
-        continue
-
-    # Prepare the hourly weather time series
-    group = (
-        group
-        .sort_values("valid_time_utc")
-        .drop_duplicates("valid_time_utc")
-        .set_index("valid_time_utc")
-    )
-
-    # Combine hourly weather timestamps with required
-    # half-hour NESO timestamps
-    combined_index = (
-        group.index
-        .union(pd.DatetimeIndex(target_times))
-        .sort_values()
-    )
-
-    temp = (
-        group[WEATHER_VARS]
-        .reindex(combined_index)
-        .interpolate(method="time")
-    )
-
-    # Keep only NESO half-hour timestamps
-    temp = temp.reindex(
-        pd.DatetimeIndex(target_times)
-    )
-
-    temp["location_name"] = location
-    temp["target_date"] = target_date
-    temp["valid_time_utc"] = temp.index
-
-    interpolated_groups.append(
-        temp.reset_index(drop=True)
-    )
-
-weather_30m = pd.concat(
-    interpolated_groups,
-    ignore_index=True
-)
+weather_30m = interpolate_hourly_weather(weather, targets)
 
 print("Interpolated weather shape:", weather_30m.shape)
 
@@ -305,63 +250,7 @@ print(
 
 #%% 9. Aggregate the 10 locations into GB-level weather features
 
-gb_weather = (
-    weather_30m
-    .groupby("valid_time_utc")
-    .agg(
-        # Wind
-        wind_speed_mean=(
-            "wind_speed_100m_ms", "mean"
-        ),
-        wind_speed_max=(
-            "wind_speed_100m_ms", "max"
-        ),
-        wind_speed_std=(
-            "wind_speed_100m_ms", "std"
-        ),
-
-        # Temperature
-        temperature_mean=(
-            "temperature_2m_c", "mean"
-        ),
-        temperature_std=(
-            "temperature_2m_c", "std"
-        ),
-
-        # Pressure
-        pressure_mean=(
-            "pressure_msl_hpa", "mean"
-        ),
-
-        # Cloud
-        cloud_mean=(
-            "cloud_cover_pct", "mean"
-        ),
-        cloud_std=(
-            "cloud_cover_pct", "std"
-        ),
-
-        # Solar radiation
-        radiation_mean=(
-            "shortwave_radiation_instant_wm2", "mean"
-        ),
-        radiation_max=(
-            "shortwave_radiation_instant_wm2", "max"
-        ),
-        radiation_std=(
-            "shortwave_radiation_instant_wm2", "std"
-        ),
-
-        # Wind direction vector components
-        wind_dir_sin_mean=(
-            "wind_dir_sin", "mean"
-        ),
-        wind_dir_cos_mean=(
-            "wind_dir_cos", "mean"
-        ),
-    )
-    .reset_index()
-)
+gb_weather = aggregate_weather_locations(weather_30m)
 
 print("GB weather shape:", gb_weather.shape)
 
@@ -477,63 +366,10 @@ assert (
 
 #%% 12. Calendar features
 
-local_time = df["valid_time_utc"].dt.tz_convert("Europe/London")
-
-hour_decimal = (
-    local_time.dt.hour
-    + local_time.dt.minute / 60
-)
-
-day_of_year = local_time.dt.dayofyear
-
-df["hour_sin"] = np.sin(
-    2 * np.pi * hour_decimal / 24
-)
-
-df["hour_cos"] = np.cos(
-    2 * np.pi * hour_decimal / 24
-)
-
-df["doy_sin"] = np.sin(
-    2 * np.pi * day_of_year / 365.25
-)
-
-df["doy_cos"] = np.cos(
-    2 * np.pi * day_of_year / 365.25
-)
-
-df["month"] = local_time.dt.month
+df = add_calendar_features(df)
 
 
 #%% 13. Define model feature sets
-
-WIND_FEATURES = [
-    "wind_speed_mean",
-    "wind_speed_max",
-    "wind_speed_std",
-    "temperature_mean",
-    "temperature_std",
-    "pressure_mean",
-    "wind_dir_sin_mean",
-    "wind_dir_cos_mean",
-    "hour_sin",
-    "hour_cos",
-    "doy_sin",
-    "doy_cos",
-]
-
-SOLAR_FEATURES = [
-    "radiation_mean",
-    "radiation_max",
-    "radiation_std",
-    "cloud_mean",
-    "cloud_std",
-    "temperature_mean",
-    "hour_sin",
-    "hour_cos",
-    "doy_sin",
-    "doy_cos",
-]
 
 print("Wind features:", len(WIND_FEATURES))
 print("Solar features:", len(SOLAR_FEATURES))

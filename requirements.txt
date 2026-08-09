@@ -3,4 +3,6 @@ numpy
 requests
 matplotlib
 scikit-learn
+joblib
+xgboost
 pytest

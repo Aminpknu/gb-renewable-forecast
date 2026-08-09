@@ -49,3 +49,13 @@ Weather is sampled at ten fixed representative GB locations defined in `config/w
 The accepted archived-weather modelling period is 2024-04-01 through 2025-08-31. Later archived forecasts are intentionally not required for the portfolio MVP. Official source exclusions are recorded in `data/raw/weather/excluded_target_dates.json`; excluded days are absent from the clean dataset and are never filled or synthesized.
 
 The documented exclusions are target dates 2025-08-06 through 2025-08-10. Four required ECMWF IFS HRES 00 UTC runs were reported as `modelRunUnavailable` by the official Single Runs API. The remaining run reproducibly returned nulls for six required weather variables at all ten locations. Consistent-model integrity and leakage safety take precedence over silently substituting another model, run cycle, realised weather, interpolation, or synthetic data.
+
+## Live inference contract
+
+For an issue date D, live inference records a nominal issue at 09:00 `Europe/London`, selects only the ECMWF IFS HRES run initialized at 00:00 UTC on D, and forecasts every physical settlement period of local calendar day D+1. A missing 00 UTC run is a hard failure; later model cycles, other weather models, realised weather, and synthetic substitution are prohibited.
+
+Live feature engineering uses the same reusable functions as Stage 4: direction vectors are calculated before interpolation; hourly values are interpolated separately within each target date; ten locations are aggregated identically; calendar features use local time; and feature columns are ordered from `models/model_metadata.json`.
+
+Embedded wind and solar capacities come from the official NESO Daily Demand Update resource. Target-date capacities are preferred, otherwise the latest valid published capacities are used. If the live source is unavailable, only the latest valid capacity from the project's local official NESO target dataset may be used, with an explicit warning and fallback provenance. NESO generation forecasts are never model features.
+
+Saved model capacity-factor predictions are bounded to [0, 1] and converted to MW using the selected positive capacities. Solar generation is forced to zero only where the same live weather feature matrix reports no incoming shortwave radiation. Energy summaries integrate each settlement-period MW value over 0.5 hours, including 46- and 50-period DST days.
