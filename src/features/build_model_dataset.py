@@ -15,9 +15,7 @@ import json
 import numpy as np
 import pandas as pd
 
-ROOT = Path(
-    r"C:\Users\mz0013\OneDrive - University of Surrey\Documents\GB forecasting"
-)
+ROOT = Path(__file__).resolve().parents[2]
 
 TARGET_FILE = (
     ROOT / "data" / "interim" /
@@ -451,3 +449,266 @@ print(
     .duplicated()
     .sum()
 )
+
+assert len(df) == len(targets)
+
+assert (
+    df["valid_time_utc"]
+    .duplicated()
+    .sum()
+    == 0
+)
+
+assert (
+    df[
+        [
+            "wind_speed_mean",
+            "radiation_mean",
+            "cloud_mean",
+            "temperature_mean"
+        ]
+    ]
+    .isna()
+    .sum()
+    .sum()
+    == 0
+)
+
+
+#%% 12. Calendar features
+
+local_time = df["valid_time_utc"].dt.tz_convert("Europe/London")
+
+hour_decimal = (
+    local_time.dt.hour
+    + local_time.dt.minute / 60
+)
+
+day_of_year = local_time.dt.dayofyear
+
+df["hour_sin"] = np.sin(
+    2 * np.pi * hour_decimal / 24
+)
+
+df["hour_cos"] = np.cos(
+    2 * np.pi * hour_decimal / 24
+)
+
+df["doy_sin"] = np.sin(
+    2 * np.pi * day_of_year / 365.25
+)
+
+df["doy_cos"] = np.cos(
+    2 * np.pi * day_of_year / 365.25
+)
+
+df["month"] = local_time.dt.month
+
+
+#%% 13. Define model feature sets
+
+WIND_FEATURES = [
+    "wind_speed_mean",
+    "wind_speed_max",
+    "wind_speed_std",
+    "temperature_mean",
+    "temperature_std",
+    "pressure_mean",
+    "wind_dir_sin_mean",
+    "wind_dir_cos_mean",
+    "hour_sin",
+    "hour_cos",
+    "doy_sin",
+    "doy_cos",
+]
+
+SOLAR_FEATURES = [
+    "radiation_mean",
+    "radiation_max",
+    "radiation_std",
+    "cloud_mean",
+    "cloud_std",
+    "temperature_mean",
+    "hour_sin",
+    "hour_cos",
+    "doy_sin",
+    "doy_cos",
+]
+
+print("Wind features:", len(WIND_FEATURES))
+print("Solar features:", len(SOLAR_FEATURES))
+
+
+#%% 14. Chronological train / validation / test split
+
+date = df["settlement_date"]
+
+df["split"] = np.select(
+    [
+        (
+            (date >= pd.Timestamp("2024-04-01")) &
+            (date <= pd.Timestamp("2025-03-31"))
+        ),
+        (
+            (date >= pd.Timestamp("2025-04-01")) &
+            (date <= pd.Timestamp("2025-05-31"))
+        ),
+        (
+            (date >= pd.Timestamp("2025-06-01")) &
+            (date <= pd.Timestamp("2025-08-31"))
+        ),
+    ],
+    [
+        "train",
+        "validation",
+        "test",
+    ],
+    default="exclude"
+)
+
+print("Row counts:")
+print(df["split"].value_counts())
+
+print("\nUnique days:")
+print(
+    df.groupby("split")["settlement_date"]
+    .nunique()
+)
+
+
+#%% 15. Final Stage 4 audit
+
+all_features = sorted(
+    set(WIND_FEATURES + SOLAR_FEATURES)
+)
+
+print("Total rows:", len(df))
+print("Unique target days:", df["settlement_date"].nunique())
+
+print("\nDuplicate UTC timestamps:")
+print(df["valid_time_utc"].duplicated().sum())
+
+print("\nMissing targets:")
+print(
+    df[
+        ["wind_cf", "solar_cf"]
+    ].isna().sum()
+)
+
+print("\nMissing model features:")
+print(
+    df[all_features].isna().sum()
+)
+
+print("\nSplit row counts:")
+print(df["split"].value_counts())
+
+print("\nSplit day counts:")
+print(
+    df.groupby("split")["settlement_date"]
+    .nunique()
+)
+
+print("\nWind CF summary:")
+print(df["wind_cf"].describe())
+
+print("\nSolar CF summary:")
+print(df["solar_cf"].describe())
+
+#%% 16. Hard validation checks
+
+assert len(df) == 24624
+
+assert df["settlement_date"].nunique() == 513
+
+assert df["valid_time_utc"].duplicated().sum() == 0
+
+assert (
+    df[["wind_cf", "solar_cf"]]
+    .isna()
+    .sum()
+    .sum()
+    == 0
+)
+
+assert (
+    df[all_features]
+    .isna()
+    .sum()
+    .sum()
+    == 0
+)
+
+assert not df["settlement_date"].isin(excluded_dates).any()
+
+assert set(df["split"].unique()) == {
+    "train",
+    "validation",
+    "test"
+}
+
+
+# Verify chronological ordering between splits
+
+train_max = df.loc[
+    df["split"] == "train",
+    "valid_time_utc"
+].max()
+
+validation_min = df.loc[
+    df["split"] == "validation",
+    "valid_time_utc"
+].min()
+
+validation_max = df.loc[
+    df["split"] == "validation",
+    "valid_time_utc"
+].max()
+
+test_min = df.loc[
+    df["split"] == "test",
+    "valid_time_utc"
+].min()
+
+print("Train max:", train_max)
+print("Validation min:", validation_min)
+print("Validation max:", validation_max)
+print("Test min:", test_min)
+
+assert train_max < validation_min
+assert validation_max < test_min
+
+
+#%% 17. Save Stage 4 ML-ready dataset
+
+OUTPUT_FILE.parent.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+df.to_csv(
+    OUTPUT_FILE,
+    index=False
+)
+
+print("Saved:", OUTPUT_FILE)
+print("Final shape:", df.shape)
+
+
+print(df.shape)
+
+print(
+    df.groupby("split")["settlement_date"]
+    .nunique()
+)
+
+print(df["split"].value_counts())
+
+print(
+    df[all_features]
+    .isna()
+    .sum()
+)
+
+print(df["wind_cf"].describe())
+print(df["solar_cf"].describe())

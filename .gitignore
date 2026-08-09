@@ -75,6 +75,7 @@ data/processed/*
 # Generated model artefacts
 models/*
 !models/.gitkeep
+!models/model_metadata.json
 *.joblib
 *.pkl
 *.pickle
