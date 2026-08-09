@@ -1,4 +1,4 @@
-name: Daily day-ahead forecast
+name: Daily GB day-ahead forecast
 
 on:
   workflow_dispatch:
