@@ -3,7 +3,7 @@ name: Daily GB day-ahead forecast
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 9 * * *"
+    - cron: "30 8 * * *"
       timezone: "Europe/London"
 
 permissions:
