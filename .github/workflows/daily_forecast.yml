@@ -3,10 +3,8 @@ name: Daily GB day-ahead forecast
 on:
   workflow_dispatch:
   schedule:
-    # Two UTC slots cover 09:00 Europe/London across GMT and BST.
-    # The local-time gate below allows only the matching slot to continue.
-    - cron: "17 8 * * *"
     - cron: "17 9 * * *"
+      timezone: "Europe/London"
 
 permissions:
   contents: write
@@ -19,6 +17,7 @@ jobs:
   forecast:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,43 +30,24 @@ jobs:
           python-version: "3.12.13"
           cache: pip
 
-      - name: Apply Europe/London schedule gate
-        id: schedule_gate
-        shell: bash
-        run: |
-          python - <<'PY'
-          import datetime as dt
-          import os
-          from zoneinfo import ZoneInfo
-
-          manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
-          london = dt.datetime.now(dt.timezone.utc).astimezone(ZoneInfo("Europe/London"))
-          should_run = manual or london.hour == 9
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"run_forecast={'true' if should_run else 'false'}\n")
-          print(f"Europe/London time: {london.isoformat()}; continue: {should_run}")
-          PY
-
       - name: Install project dependencies
-        if: steps.schedule_gate.outputs.run_forecast == 'true'
         run: python -m pip install -r requirements.txt
 
       - name: Run tests
-        if: steps.schedule_gate.outputs.run_forecast == 'true'
         run: python -m pytest -q
 
       - name: Generate forecast
-        if: steps.schedule_gate.outputs.run_forecast == 'true'
         run: python -m src.forecast_tomorrow
 
       - name: Persist public dashboard outputs
-        if: steps.schedule_gate.outputs.run_forecast == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -f outputs/forecasts/latest_forecast.csv
           git add -f outputs/forecasts/latest_forecast_summary.json
+
           if git diff --cached --quiet; then
             echo "No public forecast changes to persist."
           else
