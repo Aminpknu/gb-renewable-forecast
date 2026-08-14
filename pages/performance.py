@@ -98,7 +98,7 @@ def layout() -> html.Div:
             html.Div(
                 [
                     html.P("Locked evaluation", className="eyebrow"),
-                    html.H1("Credible performance on untouched data"),
+                    html.H1("Performance on untouched test data"),
                     html.P(
                         "Models were selected using the validation period. These metrics are from the previously untouched test period.",
                         className="page-lede",

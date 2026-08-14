@@ -201,4 +201,4 @@ This project is for portfolio, educational, and research purposes. It is not tra
 
 ## Project Status
 
-The forecasting pipeline, live-output Dash application, and SQLite-backed Scenario Explorer are implemented and tested. The repository demonstrates Python, SQL/SQLite, Dash, Plotly, machine learning, techno-economic modelling, chronological evaluation, scenario analysis, and deterministic sensitivity analysis in one lightweight portfolio application.
+The forecasting pipeline and live Dash application are fully implemented and publicly deployed, and the SQLite-backed Scenario Explorer is implemented and tested. Together, the repository demonstrates Python, SQL/SQLite, Dash, Plotly, machine learning, techno-economic modelling, chronological evaluation, scenario analysis, and deterministic sensitivity analysis in one lightweight portfolio application.
