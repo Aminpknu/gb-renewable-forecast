@@ -46,11 +46,17 @@ def test_navigation_labels_change_without_breaking_routes(guide_page) -> None:
     import app
     import dash
 
-    assert ("Forecast vs Actual", "/history") in app.NAVIGATION
-    assert ("Models, Data & Validation", "/methodology") in app.NAVIGATION
+    assert app.NAVIGATION == [
+        ("Day-ahead Forecast", "/"),
+        ("Forecast Performance", "/performance"),
+        ("2050 Heat Scenarios", "/scenarios"),
+        ("Models, Data & Validation", "/methodology"),
+    ]
 
     pages = {entry["path"]: entry for entry in dash.page_registry.values()}
-    assert pages["/history"]["name"] == "Forecast vs Actual"
+    assert pages["/"]["name"] == "Day-ahead Forecast"
+    assert pages["/performance"]["name"] == "Forecast Performance"
+    assert pages["/scenarios"]["name"] == "2050 Heat Scenarios"
     assert pages["/methodology"]["name"] == "Models, Data & Validation"
 
 
@@ -84,7 +90,8 @@ def test_guide_contains_required_sections_equations_and_links(guide_page) -> Non
     ):
         assert expected in text
 
-    assert {"/performance", "/history", "/scenarios"}.issubset(links)
+    assert {"/performance", "/performance?view=forecast-vs-actual", "/scenarios"}.issubset(links)
+    assert "/history" not in links
     assert {"#forecasting", "#scenario-analysis", "#reproducibility"}.issubset(links)
 
 

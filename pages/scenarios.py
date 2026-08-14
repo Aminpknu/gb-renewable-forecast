@@ -69,7 +69,7 @@ SENSITIVITY_LABELS = {
 dash.register_page(
     __name__,
     path="/scenarios",
-    name="Scenarios",
+    name="2050 Heat Scenarios",
     title="UK Energy Transition Scenarios | GB Renewable Forecast",
     order=3,
 )

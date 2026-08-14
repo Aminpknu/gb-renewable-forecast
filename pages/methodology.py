@@ -477,7 +477,7 @@ def layout() -> html.Div:
                         [
                             _section_heading("Observed evidence", "What did the model predict, and what actually happened?"),
                             html.P("The locked half-hourly predictions can be compared directly with the later NESO observations for real test dates."),
-                            html.Div([dcc.Link("Explore Forecast vs Actual", href="/history", className="button-primary guide-button"), dcc.Link("View aggregate Performance", href="/performance", className="guide-text-link")], className="guide-link-row"),
+                            html.Div([dcc.Link("Open Forecast Performance", href="/performance", className="button-primary guide-button"), dcc.Link("Open Forecast vs Actual view", href="/performance?view=forecast-vs-actual", className="guide-text-link")], className="guide-link-row"),
                             html.P("Forecast vs Actual shows predicted and observed wind and solar generation, together with daily MAE and bias.", className="section-note"),
                         ],
                         className="validation-callout guide-subsection",

@@ -27,7 +27,7 @@ from app_utils.formatting import (
 dash.register_page(
     __name__,
     path="/",
-    name="Forecast",
+    name="Day-ahead Forecast",
     title="Day-ahead Forecast | GB Renewable Forecast",
     order=0,
 )

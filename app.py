@@ -27,10 +27,9 @@ def health_check() -> tuple[str, int]:
 
 
 NAVIGATION = [
-    ("Forecast", "/"),
-    ("Performance", "/performance"),
-    ("Forecast vs Actual", "/history"),
-    ("Scenarios", "/scenarios"),
+    ("Day-ahead Forecast", "/"),
+    ("Forecast Performance", "/performance"),
+    ("2050 Heat Scenarios", "/scenarios"),
     ("Models, Data & Validation", "/methodology"),
 ]
 

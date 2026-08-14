@@ -45,7 +45,7 @@ def test_scenario_page_route_and_three_database_options(scenario_page) -> None:
     components = list(_walk_components(rendered))
     selector = next(component for component in components if getattr(component, "id", None) == "scenario-selector")
 
-    assert page["name"] == "Scenarios"
+    assert page["name"] == "2050 Heat Scenarios"
     assert [option["label"] for option in selector.options] == [
         "Electrification-led",
         "Whole-system hybrid",
