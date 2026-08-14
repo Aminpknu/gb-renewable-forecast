@@ -478,6 +478,110 @@ select {
   min-width: 0;
 }
 
+.scenario-heading {
+  max-width: 900px;
+}
+
+.scenario-scope {
+  margin: 18px 0 0;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.scenario-disclaimer {
+  max-width: 850px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.scenario-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 28px;
+}
+
+.scenario-selector {
+  width: min(100%, 430px);
+}
+
+.scenario-control-grid,
+.scenario-kpi-grid,
+.assumption-source-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.scenario-control-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scenario-number-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-number-input:focus {
+  border-color: var(--wind);
+  box-shadow: 0 0 0 3px rgba(23, 107, 135, 0.16);
+  outline: none;
+}
+
+.scenario-kpi-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scenario-description {
+  margin-bottom: 24px;
+}
+
+.scenario-context-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.scenario-details {
+  padding: 22px 28px;
+}
+
+.scenario-details summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.assumption-source-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.assumption-source-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--canvas);
+}
+
+.source-meta,
+.source-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.source-note {
+  margin: 5px 0 0;
+}
+
 .input-label {
   display: block;
   margin-bottom: 7px;
@@ -591,6 +695,12 @@ select {
     gap: 22px;
   }
 
+  .scenario-control-grid,
+  .scenario-kpi-grid,
+  .scenario-context-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .date-control {
     max-width: 340px;
   }
@@ -620,8 +730,17 @@ select {
   .mini-kpi-grid,
   .model-card-grid,
   .method-grid,
-  .context-grid {
+  .context-grid,
+  .scenario-control-grid,
+  .scenario-kpi-grid,
+  .scenario-context-grid,
+  .assumption-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .scenario-toolbar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .method-section:last-child {

@@ -43,7 +43,7 @@ def test_00_app_import_and_page_layouts_do_not_call_apis_or_load_models(monkeypa
     import dash
 
     pages = {entry["path"]: entry for entry in dash.page_registry.values()}
-    assert set(pages) == {"/", "/performance", "/history", "/methodology"}
+    assert set(pages) == {"/", "/performance", "/history", "/scenarios", "/methodology"}
     for page in pages.values():
         layout = page["layout"]
         rendered = layout() if callable(layout) else layout

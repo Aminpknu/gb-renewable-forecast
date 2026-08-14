@@ -30,6 +30,7 @@ NAVIGATION = [
     ("Forecast", "/"),
     ("Performance", "/performance"),
     ("History", "/history"),
+    ("Scenarios", "/scenarios"),
     ("Methodology", "/methodology"),
 ]
 
