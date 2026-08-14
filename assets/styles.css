@@ -582,6 +582,24 @@ select {
   margin: 5px 0 0;
 }
 
+.scenario-chart-heading,
+.scenario-comparison-panel > .section-heading {
+  padding: 20px 20px 0;
+}
+
+.scenario-chart-note {
+  margin: 0;
+  padding: 0 20px 22px;
+  font-size: 0.82rem;
+}
+
+.strategic-summary-copy {
+  max-width: 940px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
 .input-label {
   display: block;
   margin-bottom: 7px;

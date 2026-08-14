@@ -6,8 +6,14 @@ from collections.abc import Mapping
 from pathlib import Path
 
 import dash
+import pandas as pd
 from dash import Input, Output, callback, dcc, html
 
+from app_utils.figures import (
+    scenario_cost_investment_figure,
+    scenario_sensitivity_figure,
+    scenario_trade_offs_figure,
+)
 from src.scenarios.calculations import calculate_scenario
 from src.scenarios.repository import (
     load_active_scenarios,
@@ -44,6 +50,20 @@ CONTROL_STEPS = {
     "discount_rate": 0.1,
     "heat_pump_capex": 100,
     "low_carbon_gas_capex": 100,
+}
+
+SENSITIVITY_FIELDS = (
+    "electricity_lrvc",
+    "low_carbon_gas_cost",
+    "carbon_value",
+    "heat_pump_capex",
+)
+
+SENSITIVITY_LABELS = {
+    "electricity_lrvc": "Electricity LRVC",
+    "low_carbon_gas_cost": "Low-carbon gas cost",
+    "carbon_value": "Carbon value",
+    "heat_pump_capex": "Heat-pump CAPEX",
 }
 
 dash.register_page(
@@ -132,6 +152,129 @@ def scenario_page_payload(
         "adjustable_metadata": metadata,
         "results": results,
     }
+
+
+def default_comparison_data(
+    db_path: str | Path = SCENARIO_DB_PATH,
+) -> pd.DataFrame:
+    """Calculate a fair comparison from each scenario's stored defaults."""
+
+    rows = []
+    for scenario in load_active_scenarios(db_path):
+        scenario_id = int(scenario["scenario_id"])
+        assumptions = dict(load_scenario_assumptions(db_path, scenario_id)["values"])
+        results = calculate_scenario(
+            assumptions,
+            scenario_name=str(scenario["scenario_name"]),
+        )
+        rows.append(
+            {
+                "scenario_id": scenario_id,
+                "scenario_name": scenario["scenario_name"],
+                **results,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def scenario_sensitivity_data(
+    scenario_id: int,
+    overrides: Mapping[str, float],
+    db_path: str | Path = SCENARIO_DB_PATH,
+) -> pd.DataFrame:
+    """Calculate ±20% one-at-a-time social-cost sensitivity in memory."""
+
+    payload = scenario_page_payload(scenario_id, overrides, db_path)
+    scenario_name = str(payload["scenario"]["scenario_name"])
+    base_assumptions = dict(payload["assumptions"])
+    base_results = payload["results"]
+    base_social_cost = float(base_results["social_annual_cost_gbp"])
+
+    rows = []
+    for parameter in SENSITIVITY_FIELDS:
+        base_value = float(base_assumptions[parameter])
+        low_assumptions = dict(base_assumptions)
+        high_assumptions = dict(base_assumptions)
+        low_assumptions[parameter] = base_value * 0.8
+        high_assumptions[parameter] = base_value * 1.2
+
+        low_results = calculate_scenario(low_assumptions, scenario_name=scenario_name)
+        high_results = calculate_scenario(high_assumptions, scenario_name=scenario_name)
+        low_social_cost = float(low_results["social_annual_cost_gbp"])
+        high_social_cost = float(high_results["social_annual_cost_gbp"])
+        low_change = (low_social_cost - base_social_cost) / 1e6
+        high_change = (high_social_cost - base_social_cost) / 1e6
+        rows.append(
+            {
+                "parameter": parameter,
+                "label": SENSITIVITY_LABELS[parameter],
+                "low_parameter_value": low_assumptions[parameter],
+                "base_parameter_value": base_value,
+                "high_parameter_value": high_assumptions[parameter],
+                "low_social_annual_cost_gbp": low_social_cost,
+                "base_social_annual_cost_gbp": base_social_cost,
+                "high_social_annual_cost_gbp": high_social_cost,
+                "low_change_gbp_m": low_change,
+                "high_change_gbp_m": high_change,
+                "low_annual_emissions_tco2e": low_results["annual_emissions_tco2e"],
+                "base_annual_emissions_tco2e": base_results["annual_emissions_tco2e"],
+                "high_annual_emissions_tco2e": high_results["annual_emissions_tco2e"],
+                "max_absolute_change_gbp_m": max(abs(low_change), abs(high_change)),
+            }
+        )
+
+    return pd.DataFrame(rows).sort_values(
+        "max_absolute_change_gbp_m", ascending=False, ignore_index=True
+    )
+
+
+def strategic_summary(
+    selected_payload: Mapping[str, object],
+    default_comparison: pd.DataFrame,
+    sensitivity: pd.DataFrame,
+) -> str:
+    """Describe calculated trade-offs using deterministic, inspectable rules."""
+
+    selected_id = int(selected_payload["scenario"]["scenario_id"])
+    selected_name = str(selected_payload["scenario"]["scenario_name"])
+    selected_results = selected_payload["results"]
+    current_comparison = default_comparison.copy()
+    selected_row = current_comparison["scenario_id"] == selected_id
+    for metric in (
+        "financial_annual_cost_gbp",
+        "social_annual_cost_gbp",
+        "annual_emissions_tco2e",
+        "electricity_peak_mw",
+        "gas_network_utilisation_pct",
+    ):
+        current_comparison.loc[selected_row, metric] = selected_results[metric]
+
+    def position(metric: str, quantity: str) -> str:
+        value = float(selected_results[metric])
+        minimum = float(current_comparison[metric].min())
+        maximum = float(current_comparison[metric].max())
+        if value == minimum:
+            return f"the lowest {quantity}"
+        if value == maximum:
+            return f"the highest {quantity}"
+        return f"an intermediate level of {quantity}"
+
+    greatest = sensitivity.iloc[0]
+    return (
+        f"Under the current assumptions, {selected_name} has "
+        f"{position('financial_annual_cost_gbp', 'financial annual cost')} "
+        f"(£{selected_results['financial_annual_cost_gbp'] / 1e9:.3f}bn/year) "
+        f"and {position('social_annual_cost_gbp', 'social annual cost')} "
+        f"(£{selected_results['social_annual_cost_gbp'] / 1e9:.3f}bn/year) across the three "
+        f"illustrative pathways, with the other pathways held at their stored defaults. It has "
+        f"{position('annual_emissions_tco2e', 'annual emissions')}, "
+        f"{position('electricity_peak_mw', 'electricity peak pressure')} and "
+        f"{position('gas_network_utilisation_pct', 'gas-network utilisation')}. The largest "
+        f"one-at-a-time ±20% social-cost response is associated with {greatest['label']} "
+        f"(up to £{greatest['max_absolute_change_gbp_m']:,.1f}m/year from the current case). "
+        "These results describe trade-offs and assumption exposure rather than a preferred pathway; "
+        "they remain sensitive to the illustrative input assumptions."
+    )
 
 
 def _kpi_card(label: str, value: str, detail: str = "") -> html.Div:
@@ -267,6 +410,9 @@ def layout() -> html.Div:
     records = adjustable_records(selected_id, SCENARIO_DB_PATH)
     defaults = {name: value for name, value in zip(ADJUSTABLE_FIELDS, scenario_default_values(selected_id))}
     payload = scenario_page_payload(selected_id, defaults, SCENARIO_DB_PATH)
+    comparison = default_comparison_data(SCENARIO_DB_PATH)
+    sensitivity = scenario_sensitivity_data(selected_id, defaults, SCENARIO_DB_PATH)
+    summary = strategic_summary(payload, comparison, sensitivity)
 
     return html.Div(
         [
@@ -344,6 +490,73 @@ def layout() -> html.Div:
                 ],
                 className="panel context-panel",
             ),
+            html.Section(
+                [
+                    html.Div(
+                        [
+                            html.P("Default pathways", className="eyebrow"),
+                            html.H2("Cross-scenario comparison"),
+                            html.P(
+                                "Each pathway uses its own stored SQLite defaults. Annual costs are recurring flows; initial investment is an upfront capital requirement.",
+                                className="section-intro",
+                            ),
+                        ],
+                        className="section-heading",
+                    ),
+                    dcc.Graph(
+                        id="scenario-cost-comparison-chart",
+                        figure=scenario_cost_investment_figure(comparison),
+                        config={"displayModeBar": False, "responsive": True},
+                        className="chart",
+                        style={"height": "440px"},
+                    ),
+                    dcc.Graph(
+                        id="scenario-tradeoffs-chart",
+                        figure=scenario_trade_offs_figure(comparison),
+                        config={"displayModeBar": False, "responsive": True},
+                        className="chart",
+                        style={"height": "430px"},
+                    ),
+                    html.P(
+                        "Emissions, electricity peak and gas utilisation are shown on separate axes because their units and scales are not directly comparable.",
+                        className="section-note scenario-chart-note",
+                    ),
+                ],
+                className="panel chart-panel scenario-comparison-panel",
+            ),
+            html.Section(
+                [
+                    html.Div(
+                        [
+                            html.P("Selected pathway", className="eyebrow"),
+                            html.H2("One-at-a-time sensitivity"),
+                            html.P(
+                                "Each bar changes one assumption by ±20% from the current controls while all other assumptions remain fixed.",
+                                className="section-intro",
+                            ),
+                        ],
+                        className="section-heading scenario-chart-heading",
+                    ),
+                    dcc.Graph(
+                        id="scenario-sensitivity-chart",
+                        figure=scenario_sensitivity_figure(
+                            sensitivity, str(payload["scenario"]["scenario_name"])
+                        ),
+                        config={"displayModeBar": False, "responsive": True},
+                        className="chart",
+                        style={"height": "420px"},
+                    ),
+                ],
+                className="panel chart-panel",
+            ),
+            html.Section(
+                [
+                    html.P("Deterministic interpretation", className="eyebrow"),
+                    html.H2("Strategic trade-offs"),
+                    html.P(summary, id="scenario-strategic-summary", className="strategic-summary-copy"),
+                ],
+                className="panel context-panel strategic-summary-panel",
+            ),
             html.Details(
                 [
                     html.Summary("Assumptions and sources"),
@@ -374,17 +587,25 @@ def refresh_scenario_defaults(scenario_id: int, _reset_clicks: int | None) -> tu
 @callback(
     Output("scenario-kpis", "children"),
     Output("scenario-pathway-details", "children"),
+    Output("scenario-sensitivity-chart", "figure"),
+    Output("scenario-strategic-summary", "children"),
     Output("scenario-source-details", "children"),
     Input("scenario-selector", "value"),
     *[Input(f"scenario-input-{name}", "value") for name in ADJUSTABLE_FIELDS],
 )
-def update_scenario_outputs(scenario_id: int, *values: float) -> tuple[list, list, list]:
+def update_scenario_outputs(scenario_id: int, *values: float) -> tuple[list, list, object, str, list]:
     """Recalculate display values in memory from the six current controls."""
 
     overrides = dict(zip(ADJUSTABLE_FIELDS, values))
     payload = scenario_page_payload(scenario_id, overrides, SCENARIO_DB_PATH)
+    sensitivity = scenario_sensitivity_data(scenario_id, overrides, SCENARIO_DB_PATH)
+    comparison = default_comparison_data(SCENARIO_DB_PATH)
     return (
         _format_kpis(payload["results"]),
         _format_pathway(payload),
+        scenario_sensitivity_figure(
+            sensitivity, str(payload["scenario"]["scenario_name"])
+        ),
+        strategic_summary(payload, comparison, sensitivity),
         _format_sources(payload["adjustable_metadata"]),
     )

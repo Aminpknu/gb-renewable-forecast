@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from app_utils.theme import COLORS, base_layout
 
@@ -165,3 +166,143 @@ def historical_generation_figure(
         y_title="Embedded generation (MW)",
         height=400,
     )
+
+
+def scenario_cost_investment_figure(comparison: pd.DataFrame) -> go.Figure:
+    """Compare recurring annual costs and upfront investment by scenario."""
+
+    figure = go.Figure()
+    series = (
+        (
+            "Financial annual cost",
+            "financial_annual_cost_gbp",
+            COLORS["wind"],
+            "Financial annual cost: £%{y:.2f}bn/year",
+        ),
+        (
+            "Social annual cost",
+            "social_annual_cost_gbp",
+            COLORS["solar"],
+            "Social annual cost: £%{y:.2f}bn/year",
+        ),
+        (
+            "Initial investment",
+            "initial_investment_gbp",
+            COLORS["actual"],
+            "Initial investment: £%{y:.2f}bn upfront",
+        ),
+    )
+    for label, column, color, hover in series:
+        values = comparison[column] / 1e9
+        figure.add_bar(
+            x=comparison["scenario_name"],
+            y=values,
+            name=label,
+            marker_color=color,
+            customdata=comparison["scenario_name"],
+            hovertemplate="<b>%{customdata}</b><br>" + hover + "<extra></extra>",
+        )
+
+    layout = base_layout(height=440)
+    figure.update_layout(
+        title={"text": "Default scenario costs and investment", "x": 0, "xanchor": "left"},
+        barmode="group",
+        **layout,
+    )
+    figure.update_xaxes(title_text="Scenario")
+    figure.update_yaxes(title_text="Value (£bn)", tickformat=".1f")
+    return figure
+
+
+def scenario_trade_offs_figure(comparison: pd.DataFrame) -> go.Figure:
+    """Show emissions and network proxies on three independent scales."""
+
+    figure = make_subplots(
+        rows=1,
+        cols=3,
+        shared_yaxes=True,
+        horizontal_spacing=0.08,
+        subplot_titles=(
+            "Annual emissions",
+            "Electricity peak proxy",
+            "Gas-network utilisation proxy",
+        ),
+    )
+    panels = (
+        ("annual_emissions_tco2e", 1e6, "MtCO2e/year", COLORS["negative"], ".3f"),
+        ("electricity_peak_mw", 1, "MW", COLORS["wind"], ",.0f"),
+        ("gas_network_utilisation_pct", 1, "%", COLORS["solar"], ".1f"),
+    )
+    for column_index, (column, divisor, unit, color, number_format) in enumerate(panels, 1):
+        figure.add_trace(
+            go.Bar(
+                x=comparison[column] / divisor,
+                y=comparison["scenario_name"],
+                orientation="h",
+                marker_color=color,
+                showlegend=False,
+                customdata=comparison["scenario_name"],
+                hovertemplate=(
+                    "<b>%{customdata}</b><br>%{x:" + number_format + "} " + unit + "<extra></extra>"
+                ),
+            ),
+            row=1,
+            col=column_index,
+        )
+        figure.update_xaxes(title_text=unit, row=1, col=column_index)
+
+    layout = base_layout(height=430)
+    layout["showlegend"] = False
+    figure.update_layout(
+        title={"text": "Default scenario system trade-offs", "x": 0, "xanchor": "left"},
+        **layout,
+    )
+    figure.update_yaxes(autorange="reversed", row=1, col=1)
+    return figure
+
+
+def scenario_sensitivity_figure(sensitivity: pd.DataFrame, scenario_name: str) -> go.Figure:
+    """Build a one-at-a-time ±20% social-cost sensitivity chart."""
+
+    figure = go.Figure()
+    figure.add_bar(
+        y=sensitivity["label"],
+        x=sensitivity["low_change_gbp_m"],
+        orientation="h",
+        name="Parameter −20%",
+        marker_color=COLORS["positive"],
+        customdata=sensitivity[["low_parameter_value", "base_parameter_value"]],
+        hovertemplate=(
+            "<b>%{y}</b><br>Parameter: %{customdata[1]:,.2f} → %{customdata[0]:,.2f}"
+            "<br>Social-cost change: £%{x:+,.1f}m/year<extra></extra>"
+        ),
+    )
+    figure.add_bar(
+        y=sensitivity["label"],
+        x=sensitivity["high_change_gbp_m"],
+        orientation="h",
+        name="Parameter +20%",
+        marker_color=COLORS["negative"],
+        customdata=sensitivity[["high_parameter_value", "base_parameter_value"]],
+        hovertemplate=(
+            "<b>%{y}</b><br>Parameter: %{customdata[1]:,.2f} → %{customdata[0]:,.2f}"
+            "<br>Social-cost change: £%{x:+,.1f}m/year<extra></extra>"
+        ),
+    )
+    layout = base_layout(height=420)
+    figure.update_layout(
+        title={
+            "text": f"{scenario_name}: ±20% one-at-a-time sensitivity",
+            "x": 0,
+            "xanchor": "left",
+        },
+        barmode="overlay",
+        **layout,
+    )
+    figure.update_xaxes(
+        title_text="Change from base social annual cost (£m/year)",
+        zeroline=True,
+        zerolinecolor=COLORS["actual"],
+    )
+    figure.update_yaxes(title_text="Assumption", autorange="reversed")
+    return figure

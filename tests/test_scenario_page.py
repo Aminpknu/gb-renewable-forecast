@@ -8,8 +8,11 @@ import sqlite3
 from pathlib import Path
 
 import pytest
+import requests
 
+from src.scenarios.calculations import calculate_scenario
 from src.scenarios.repository import load_active_scenarios
+from src.scenarios.repository import load_scenario_assumptions
 
 
 @pytest.fixture
@@ -146,3 +149,197 @@ def test_active_scenario_names_are_loaded_from_repository(scenario_page) -> None
     scenarios = load_active_scenarios(scenario_page.SCENARIO_DB_PATH)
     assert len(scenarios) == 3
     assert all(scenario["scenario_name"] for scenario in scenarios)
+
+
+def test_both_comparison_charts_are_present(scenario_page) -> None:
+    rendered = scenario_page.layout()
+    components = {
+        component.id: component
+        for component in _walk_components(rendered)
+        if isinstance(getattr(component, "id", None), str)
+    }
+
+    assert "scenario-cost-comparison-chart" in components
+    assert "scenario-tradeoffs-chart" in components
+    assert len(components["scenario-cost-comparison-chart"].figure.data) == 3
+    assert len(components["scenario-tradeoffs-chart"].figure.data) == 3
+
+
+def test_default_comparison_reproduces_all_validated_scenarios(scenario_page) -> None:
+    comparison = scenario_page.default_comparison_data().set_index("scenario_name")
+
+    assert comparison.index.tolist() == [
+        "Electrification-led",
+        "Whole-system hybrid",
+        "Low-carbon gas-led",
+    ]
+    expected = {
+        "Electrification-led": (1_239_765_372.325853, 1_289_420_610.4210913, 8_800_000_000),
+        "Whole-system hybrid": (1_139_555_247.4669936, 1_259_429_056.990803, 7_000_000_000),
+        "Low-carbon gas-led": (1_039_345_122.608134, 1_229_437_503.560515, 5_200_000_000),
+    }
+    for name, (financial, social, investment) in expected.items():
+        assert comparison.loc[name, "financial_annual_cost_gbp"] == pytest.approx(financial)
+        assert comparison.loc[name, "social_annual_cost_gbp"] == pytest.approx(social)
+        assert comparison.loc[name, "initial_investment_gbp"] == pytest.approx(investment)
+
+
+def test_comparison_figures_contain_all_three_scenarios(scenario_page) -> None:
+    comparison = scenario_page.default_comparison_data()
+    cost_figure = scenario_page.scenario_cost_investment_figure(comparison)
+    tradeoff_figure = scenario_page.scenario_trade_offs_figure(comparison)
+    expected_names = comparison["scenario_name"].tolist()
+
+    assert all(list(trace.x) == expected_names for trace in cost_figure.data)
+    assert all(list(trace.y) == expected_names for trace in tradeoff_figure.data)
+    assert tradeoff_figure.layout.xaxis.title.text == "MtCO2e/year"
+    assert tradeoff_figure.layout.xaxis2.title.text == "MW"
+    assert tradeoff_figure.layout.xaxis3.title.text == "%"
+
+
+def test_sensitivity_matches_minus_base_and_plus_twenty_percent(scenario_page) -> None:
+    scenario_id = scenario_page.default_scenario_id()
+    defaults = dict(
+        zip(scenario_page.ADJUSTABLE_FIELDS, scenario_page.scenario_default_values(scenario_id))
+    )
+    sensitivity = scenario_page.scenario_sensitivity_data(scenario_id, defaults)
+    electricity = sensitivity.set_index("parameter").loc["electricity_lrvc"]
+    complete = dict(load_scenario_assumptions(scenario_page.SCENARIO_DB_PATH, scenario_id)["values"])
+    low = dict(complete)
+    high = dict(complete)
+    low["electricity_lrvc"] = defaults["electricity_lrvc"] * 0.8
+    high["electricity_lrvc"] = defaults["electricity_lrvc"] * 1.2
+
+    assert electricity["low_parameter_value"] == pytest.approx(defaults["electricity_lrvc"] * 0.8)
+    assert electricity["base_parameter_value"] == pytest.approx(defaults["electricity_lrvc"])
+    assert electricity["high_parameter_value"] == pytest.approx(defaults["electricity_lrvc"] * 1.2)
+    assert electricity["low_social_annual_cost_gbp"] == pytest.approx(
+        calculate_scenario(low)["social_annual_cost_gbp"]
+    )
+    assert electricity["high_social_annual_cost_gbp"] == pytest.approx(
+        calculate_scenario(high)["social_annual_cost_gbp"]
+    )
+
+
+def test_sensitivity_changes_only_one_parameter_at_a_time(scenario_page, monkeypatch) -> None:
+    scenario_id = scenario_page.default_scenario_id()
+    defaults = dict(
+        zip(scenario_page.ADJUSTABLE_FIELDS, scenario_page.scenario_default_values(scenario_id))
+    )
+    original = scenario_page.calculate_scenario
+    calls = []
+
+    def recording_calculation(assumptions, **kwargs):
+        calls.append(dict(assumptions))
+        return original(assumptions, **kwargs)
+
+    monkeypatch.setattr(scenario_page, "calculate_scenario", recording_calculation)
+    scenario_page.scenario_sensitivity_data(scenario_id, defaults)
+    base = calls[0]
+
+    assert len(calls) == 1 + 2 * len(scenario_page.SENSITIVITY_FIELDS)
+    for parameter, low_call, high_call in zip(
+        scenario_page.SENSITIVITY_FIELDS, calls[1::2], calls[2::2]
+    ):
+        assert [key for key in base if low_call[key] != base[key]] == [parameter]
+        assert [key for key in base if high_call[key] != base[key]] == [parameter]
+
+
+def test_carbon_value_sensitivity_changes_social_cost_not_emissions(scenario_page) -> None:
+    scenario_id = scenario_page.default_scenario_id()
+    defaults = dict(
+        zip(scenario_page.ADJUSTABLE_FIELDS, scenario_page.scenario_default_values(scenario_id))
+    )
+    carbon = scenario_page.scenario_sensitivity_data(scenario_id, defaults).set_index(
+        "parameter"
+    ).loc["carbon_value"]
+
+    assert carbon["low_social_annual_cost_gbp"] != pytest.approx(
+        carbon["base_social_annual_cost_gbp"]
+    )
+    assert carbon["high_social_annual_cost_gbp"] != pytest.approx(
+        carbon["base_social_annual_cost_gbp"]
+    )
+    assert carbon["low_annual_emissions_tco2e"] == pytest.approx(
+        carbon["base_annual_emissions_tco2e"]
+    )
+    assert carbon["high_annual_emissions_tco2e"] == pytest.approx(
+        carbon["base_annual_emissions_tco2e"]
+    )
+
+
+def _default_sensitivity_for(scenario_page, scenario_id: int):
+    defaults = dict(
+        zip(scenario_page.ADJUSTABLE_FIELDS, scenario_page.scenario_default_values(scenario_id))
+    )
+    return scenario_page.scenario_sensitivity_data(scenario_id, defaults).set_index("parameter")
+
+
+def test_electricity_cost_sensitivity_is_larger_for_electricity_heavy_pathway(scenario_page) -> None:
+    electrification = _default_sensitivity_for(scenario_page, 1)
+    gas_led = _default_sensitivity_for(scenario_page, 3)
+    assert electrification.loc["electricity_lrvc", "max_absolute_change_gbp_m"] > gas_led.loc[
+        "electricity_lrvc", "max_absolute_change_gbp_m"
+    ]
+
+
+def test_gas_cost_sensitivity_is_larger_for_gas_heavy_pathway(scenario_page) -> None:
+    electrification = _default_sensitivity_for(scenario_page, 1)
+    gas_led = _default_sensitivity_for(scenario_page, 3)
+    assert gas_led.loc["low_carbon_gas_cost", "max_absolute_change_gbp_m"] > electrification.loc[
+        "low_carbon_gas_cost", "max_absolute_change_gbp_m"
+    ]
+
+
+def test_strategic_summary_is_deterministic_changes_and_avoids_claims(
+    scenario_page, monkeypatch
+) -> None:
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("Strategic summary attempted an external API call.")
+
+    monkeypatch.setattr(requests, "get", forbidden)
+    monkeypatch.setattr(requests.sessions.Session, "request", forbidden)
+    scenario_id = scenario_page.default_scenario_id()
+    defaults = dict(
+        zip(scenario_page.ADJUSTABLE_FIELDS, scenario_page.scenario_default_values(scenario_id))
+    )
+    comparison = scenario_page.default_comparison_data()
+    baseline_payload = scenario_page.scenario_page_payload(scenario_id, defaults)
+    baseline_sensitivity = scenario_page.scenario_sensitivity_data(scenario_id, defaults)
+    baseline_summary = scenario_page.strategic_summary(
+        baseline_payload, comparison, baseline_sensitivity
+    )
+
+    adjusted_values = dict(defaults)
+    adjusted_values["carbon_value"] *= 4
+    adjusted_payload = scenario_page.scenario_page_payload(scenario_id, adjusted_values)
+    adjusted_sensitivity = scenario_page.scenario_sensitivity_data(scenario_id, adjusted_values)
+    adjusted_summary = scenario_page.strategic_summary(
+        adjusted_payload, comparison, adjusted_sensitivity
+    )
+
+    assert baseline_summary != adjusted_summary
+    assert "assumption" in baseline_summary.lower()
+    assert "optimal" not in baseline_summary.lower()
+    assert "best" not in baseline_summary.lower()
+
+
+def test_comparison_sensitivity_and_summary_do_not_modify_sqlite(
+    scenario_page, tmp_path: Path
+) -> None:
+    database = _copy_database(scenario_page.SCENARIO_DB_PATH, tmp_path)
+    scenario_id = scenario_page.default_scenario_id(database)
+    defaults = dict(
+        zip(
+            scenario_page.ADJUSTABLE_FIELDS,
+            scenario_page.scenario_default_values(scenario_id, database),
+        )
+    )
+    before = database.read_bytes()
+
+    comparison = scenario_page.default_comparison_data(database)
+    payload = scenario_page.scenario_page_payload(scenario_id, defaults, database)
+    sensitivity = scenario_page.scenario_sensitivity_data(scenario_id, defaults, database)
+    scenario_page.strategic_summary(payload, comparison, sensitivity)
+
+    assert database.read_bytes() == before
