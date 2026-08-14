@@ -1,204 +1,241 @@
-# GB Embedded Wind & Solar Day-Ahead Forecasting
+# GB Renewable Forecast & Energy Transition Explorer
 
-A reproducible energy-analytics application combining two complementary capabilities: leakage-safe day-ahead forecasting of Great Britain's **embedded** wind and solar generation, and an interactive strategic explorer for simplified UK heat and energy-network transition pathways. The operational forecasting and annual 2050 scenario models remain separate analytical engines.
+[![Live App](https://img.shields.io/badge/Live%20App-Render-46E3B7?logo=render&logoColor=white)](https://gb-renewable-forecast.onrender.com)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Dash](https://img.shields.io/badge/Dash-Plotly-3F4F75?logo=plotly&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-100%20passing-2E7D32)
 
-## Live Demo
+A deployed energy-analytics portfolio combining two complementary capabilities:
 
-**[Open the live GB Renewable Forecast dashboard](https://gb-renewable-forecast.onrender.com)**
+1. **Day-ahead forecasting** of Great Britain's embedded wind and solar generation using leakage-safe machine learning.
+2. **2050 heat-transition scenario analysis** comparing simplified electrification, hybrid and low-carbon-gas pathways.
 
-The dashboard provides:
-- Live day-ahead embedded wind and solar generation forecasts
-- Half-hourly forecast values and capacity factors
-- Historical forecast-vs-actual performance
-- Locked out-of-sample model evaluation
-- An interactive UK Heat and Energy Network Transition Scenario Explorer
-- Methodology and data-source documentation
+The two models share one application but remain **separate analytical engines**. The forecasting model predicts an observable next-day outcome; the scenario model explores transparent what-if assumptions.
 
-> Note: The app is hosted on Render's free tier, so the first load after a period of inactivity may take around a minute while the service wakes up.
+> **Live dashboard:** https://gb-renewable-forecast.onrender.com  
+> Render's free tier may take around a minute to wake after a period of inactivity.
 
-## Headline Results
+## Quick tour
 
-The selected models were chosen on a chronological validation period. The results below come from the previously untouched June–August 2025 test period and were locked before production refitting.
+| Area | Question answered | Open |
+|---|---|---|
+| **Day-ahead Forecast** | What will embedded wind and solar generation look like tomorrow? | [Open forecast](https://gb-renewable-forecast.onrender.com/) |
+| **Forecast Performance** | How well do the models perform, and what did they predict versus what actually happened? | [Open performance](https://gb-renewable-forecast.onrender.com/performance) |
+| **2050 Heat Scenarios** | What would different heat-transition assumptions imply for cost, emissions and network use? | [Open scenarios](https://gb-renewable-forecast.onrender.com/scenarios) |
+| **Models, Data & Validation** | How are the models, assumptions, equations and validation evidence constructed? | [Open guide](https://gb-renewable-forecast.onrender.com/methodology) |
 
-| Target | Model | Test MAE | Test R2 | Skill vs monthly climatology |
+## What this project demonstrates
+
+- **Energy forecasting:** half-hourly GB embedded wind and solar forecasts using archived/live ECMWF weather and NESO generation/capacity data.
+- **Leakage-safe ML evaluation:** chronological train/validation/test splits, archived forecast inputs, untouched final test data and a climatology baseline.
+- **Transparent validation:** aggregate MAE/R²/skill metrics plus a date-level Forecast vs Actual explorer.
+- **Energy-transition modelling:** SQLite-backed 2050 heat pathways with annual cost, emissions, investment and network-pressure proxies.
+- **Techno-economic sensitivity:** deterministic ±20% one-at-a-time sensitivity on key assumptions.
+- **Production-style engineering:** Python, SQL/SQLite, Dash/Plotly, model packaging, offline tests, GitHub Actions preparation and Render deployment.
+
+## Two analytical engines
+
+```mermaid
+flowchart LR
+    subgraph A["Part A — Day-ahead renewable forecasting"]
+        A1[ECMWF archived/live forecasts] --> A2[Leakage-safe features]
+        A2 --> A3[Wind: XGBoost<br/>Solar: ExtraTrees]
+        A3 --> A4[Predicted capacity factor]
+        A4 --> A5[NESO embedded capacity]
+        A5 --> A6[Day-ahead generation in MW]
+    end
+
+    subgraph B["Part B — 2050 heat-transition scenarios"]
+        B1[SQLite assumptions] --> B2[Read-only repository]
+        B2 --> B3[Python techno-economic calculations]
+        B3 --> B4[Scenario controls]
+        B4 --> B5[Costs, emissions & network proxies]
+        B5 --> B6[One-at-a-time sensitivity]
+    end
+```
+
+## Day-ahead renewable forecasting
+
+The forecasting model estimates **GB embedded wind and solar generation for every settlement period of the following UK calendar day**.
+
+The production convention is:
+
+- nominal issue time: **09:00 Europe/London**;
+- weather run: issue-date **00 UTC ECMWF IFS HRES**;
+- target: the following local calendar day;
+- resolution: **30 minutes**, including 46-, 48- and 50-period daylight-saving days;
+- wind model: **XGBoost**;
+- solar model: **ExtraTrees**.
+
+The models predict capacity factor first, then convert it to MW using official embedded capacity:
+
+\[
+\hat{G}_t = \widehat{CF}_t \times K_t
+\]
+
+where \(\hat{G}_t\) is predicted generation in MW, \(\widehat{CF}_t\) is predicted capacity factor and \(K_t\) is embedded capacity in MW.
+
+### Locked test performance
+
+The selected models were chosen on the chronological validation period. The results below come from the previously untouched **June–August 2025 test period** and were locked before production refitting.
+
+| Target | Model | Test MAE | Test R² | Skill vs monthly climatology |
 |---|---|---:|---:|---:|
-| Embedded wind generation | XGBoost | 296.6 MW | 0.868 | 66.4% lower MAE |
-| Embedded solar generation | ExtraTrees | 425.4 MW | 0.955 | 42.0% lower MAE |
+| Embedded wind generation | XGBoost | **296.6 MW** | **0.868** | **66.4% lower MAE** |
+| Embedded solar generation | ExtraTrees | **425.4 MW** | **0.955** | **42.0% lower MAE** |
 
-The system forecasts embedded generation only; it is not a forecast of all GB renewable output.
+The application also lets users inspect individual test dates and compare the model prediction directly with the later observed NESO generation.
 
-## What the system does
+### Validation evidence
+
+<p align="center">
+  <img src="outputs/figures/model_vs_baseline_mae.png" alt="Model versus climatology baseline MAE" width="62%">
+</p>
+
+<p align="center">
+  <img src="outputs/figures/wind_test_forecast_vs_actual.png" alt="Wind test forecast versus actual" width="49%">
+  <img src="outputs/figures/solar_test_forecast_vs_actual.png" alt="Solar test forecast versus actual" width="49%">
+</p>
+
+**Evaluation safeguards**
+
+- training, validation and test periods are chronological;
+- model selection uses validation data, while reported headline metrics use untouched test data;
+- archived weather forecasts are used for backtesting, not realised future weather;
+- monthly climatology is retained as a simple benchmark;
+- five unavailable official-source target dates, 6–10 August 2025, are documented rather than fabricated or backfilled;
+- locked test predictions remain committed and inspectable.
+
+The system forecasts **embedded generation only**; it is not a forecast of all GB renewable output.
+
+## 2050 Heat and Energy Network Transition Explorer
+
+The Scenario Explorer asks a different question: **what would alternative heat-transition choices imply in 2050?**
+
+For an illustrative portfolio of one million homes, it compares three simplified pathways:
+
+| Pathway | Electric heat | Low-carbon gas | Interpretation |
+|---|---:|---:|---|
+| **Electrification-led** | 80% | 20% | Strong electrification of heat with reduced gas-network use |
+| **Whole-system hybrid** | 50% | 50% | A balanced electricity / low-carbon-gas pathway |
+| **Low-carbon gas-led** | 20% | 80% | Greater continued use of the gas network supported by low-carbon gases |
+
+The model reports financial annual cost, social annual cost including carbon value, annual emissions, initial investment, an electricity-peak proxy, and a gas-network-utilisation proxy.
+
+Users can adjust six assumptions in memory without writing back to the database: electricity LRVC, low-carbon-gas cost, carbon value, discount rate, heat-pump CAPEX, and low-carbon-gas CAPEX.
+
+A deterministic sensitivity test varies four principal assumptions by **−20% and +20%**, one at a time, and recalculates social annual cost.
+
+> This module **does not predict 2050** and does not assign probabilities to pathways. It is a transparent decision-support demonstration based on explicit assumptions. It is not a power-flow model, gas hydraulic model, investment recommendation or reproduction of NESO Future Energy Scenarios.
+
+In particular, 100% gas-network utilisation means 100% of the model's illustrative reference throughput, not the physical maximum capacity of the GB gas network.
+
+## Data and provenance
+
+**Forecasting**
+
+- **Generation and capacity:** National Energy System Operator (NESO) Historic Demand Data and Daily Demand Update.
+- **Weather:** ECMWF IFS HRES 9 km through the Open-Meteo Single Runs API using `ecmwf_ifs`.
+- **Weather sampling:** ten fixed representative GB locations; they are not claimed to be renewable-capacity-weighted sites.
+
+**Scenario analysis**
+
+The SQLite database stores values, units, source notes, reference years, price-base years and whether an assumption is user-adjustable. Published evidence informs inputs such as the HM Treasury discount rate, DESNZ carbon appraisal value/LRVCs, heat-pump COP and gas-heating efficiency. Portfolio size, pathway shares and several technology/cost assumptions are explicitly labelled illustrative.
+
+For the full assumptions register, equations, terminology and limitations, use the in-app **[Models, Data & Validation guide](https://gb-renewable-forecast.onrender.com/methodology)**.
+
+<details>
+<summary><strong>Chronological forecasting split and modelling archive</strong></summary>
+
+- Training: 1 April 2024 to 31 March 2025
+- Validation: 1 April 2025 to 31 May 2025
+- Untouched test: 1 June 2025 to 31 August 2025
+- Usable modelling archive: 1 April 2024 to 31 August 2025
+- Production fit: 24,624 half-hour rows across 513 available target days
+
+Five individual official-source exclusions, 6–10 August 2025, are documented in `data/raw/weather/excluded_target_dates.json`. No later model cycle, realised weather or synthetic rows were used to replace them.
+
+</details>
+
+## Application structure
+
+The public Dash app is organised around four clear user journeys:
+
+1. **Day-ahead Forecast** — current forecast outputs, KPIs, interactive chart, settlement table and CSV download.
+2. **Forecast Performance** — overall locked-test metrics plus an integrated **Forecast vs actual** view for individual test dates.
+3. **2050 Heat Scenarios** — pathway comparison, interactive assumptions, trade-offs and sensitivity.
+4. **Models, Data & Validation** — the technical guide tying together data, equations, validation safeguards, provenance and limitations.
+
+The forecast CLI and dashboard are intentionally separated. `python -m src.forecast_tomorrow` retrieves inputs, loads saved models and writes compact forecast outputs. The Dash process reads those outputs without loading the large estimators or calling live APIs during page navigation.
+
+## Technology stack
+
+| Area | Tools |
+|---|---|
+| Forecasting & ML | Python, pandas, NumPy, scikit-learn, XGBoost |
+| Scenario modelling | Python, SQL, SQLite |
+| Visualisation | Dash, Plotly |
+| Validation | pytest, locked test artefacts, chronological backtesting |
+| Deployment | Render, gunicorn |
+| Automation | GitHub Actions workflow prepared for daily forecasting |
+
+The current repository test suite contains **100 passing offline tests**. Network-dependent behaviour is mocked where appropriate, and importing/navigating the Dash application does not call NESO or Open-Meteo.
+
+## Repository map
 
 ```text
-ECMWF archived/live weather forecast
-              |
-              v
-Leakage-safe half-hour feature engineering
-              |
-              v
-Separate wind and solar ML models
-              |
-              v
-Predicted capacity factor (bounded for inference)
-              |
-              v
-Official NESO embedded capacity
-              |
-              v
-46 / 48 / 50-period day-ahead MW forecast
-```
-
-Operational convention:
-
-- nominal issue time: 09:00 `Europe/London`;
-- weather run: issue-date 00 UTC ECMWF IFS HRES;
-- target: every physical settlement period of the following local calendar day; and
-- production models: XGBoost for wind and ExtraTrees for solar.
-
-The forecast CLI and dashboard are intentionally separate. `python -m src.forecast_tomorrow` retrieves official inputs, loads the saved models, and writes small forecast outputs. The Dash process displays those outputs without loading the large estimators or calling live APIs during navigation.
-
-## Data Sources
-
-- **Generation and capacity:** official National Energy System Operator (NESO) Historic Demand Data and Daily Demand Update.
-- **Weather:** ECMWF IFS HRES 9 km through the official Open-Meteo Single Runs API, using the exact API identifier `ecmwf_ifs`.
-- **Weather sampling:** ten fixed representative GB locations. They are not claimed to be renewable-capacity-weighted sites.
-
-Raw downloads are preserved locally with provenance and are excluded from the public repository.
-
-## Leakage-safe backtesting
-
-Historical features use individual archived weather forecasts that could have been available at the nominal forecast issue time. Realised future weather and Open-Meteo's stitched historical-weather product are not substituted. Weather-run initialization, nominal issue time, forecast valid time, and settlement time remain explicit and distinct.
-
-Evaluation is chronological:
-
-- training: 1 April 2024 to 31 March 2025;
-- validation: 1 April 2025 to 31 May 2025; and
-- untouched test: 1 June 2025 to 31 August 2025.
-
-The usable modelling archive spans 1 April 2024 to 31 August 2025. Five individual official-source exclusions—6 to 10 August 2025—are documented in `data/raw/weather/excluded_target_dates.json`. No alternative model, later run cycle, realised weather, or synthetic rows were used to fill them. The production fit uses 24,624 half-hour rows across 513 available target days.
-
-## Dashboard
-
-The Plotly Dash Pages application provides:
-
-- a live-output forecast page with KPI cards, an interactive chart, full settlement table, and CSV download;
-- a performance page sourced from locked untouched-test metrics;
-- a date-selectable historical explorer containing only real test dates;
-- a SQLite-backed 2050 heat and energy-network Scenario Explorer; and
-- a recruiter-friendly methodology and limitations page.
-
-It supports 46-, 48-, and 50-settlement-period target days and exposes `server = app.server` for deployment.
-
-## UK Heat and Energy Network Transition Explorer
-
-The Scenario Explorer asks a separate strategic question: how might contrasting 2050 heat-decarbonisation pathways change annual cost, emissions, upfront investment, and illustrative network pressures for a portfolio of one million homes? It compares three simplified pathways—**Electrification-led**, **Whole-system hybrid**, and **Low-carbon gas-led**—without numerically coupling them to the day-ahead forecasting model.
-
-```text
-SQLite assumptions
-        |
-        v
-Read-only repository layer
-        |
-        v
-Python techno-economic calculations
-        |
-        v
-Dash controls
-        |
-        v
-KPI, comparison and sensitivity visualisation
-```
-
-The module reports financial annual cost, social annual cost, annual emissions, initial investment, an electricity-peak proxy, and a gas-network-utilisation proxy. Users can adjust electricity LRVC, low-carbon-gas cost, carbon value, discount rate, heat-pump CAPEX, and low-carbon-gas CAPEX. A deterministic one-at-a-time sensitivity varies four principal inputs by -20% and +20%, holding all other assumptions constant, and reports the change in social annual cost.
-
-Assumption provenance is explicit. Published evidence informs inputs such as the HM Treasury discount rate, DESNZ carbon appraisal value and LRVCs, heat-pump COP, and gas-heating efficiency. The one-million-home boundary, heat demand, pathway shares, low-carbon-gas cost and emissions factor, technology CAPEX and lifetimes, and peak-heat proxy are illustrative portfolio assumptions—not official forecasts. The scenarios are simplified adaptations informed by UK evidence and do not reproduce NESO Future Energy Scenarios.
-
-_A Scenario Explorer screenshot can be added here after the final application capture; no placeholder image is committed._
-
-The Scenario Explorer is a decision-support demonstration, not a forecast or investment recommendation. It is not a power-flow model, gas hydraulic model, network capacity assessment, or reproduction of NESO FES. In particular, 100% gas-network utilisation means 100% of the model's illustrative reference throughput, not the physical maximum capacity of the GB gas network.
-
-## Repository Structure
-
-```text
-app.py                         Dash entrypoint
-pages/                         Forecast, performance, history, scenarios, methodology
-app_utils/                     Cached loaders, figures, formatting and theme
+app.py                         Dash entrypoint and primary navigation
+pages/                         Forecast, performance, scenarios, methodology, legacy history redirect
+app_utils/                     Cached loaders, figures and formatting
 assets/styles.css              Responsive application styling
-config/weather_locations.json  Ten representative GB locations
-data/scenarios/                Small runtime SQLite scenario database
+config/weather_locations.json  Ten representative GB weather locations
+data/scenarios/                Runtime SQLite scenario database
 src/data/                      NESO/weather ingestion and validation
 src/features/                  Shared training/inference features
-src/models/                    Training workflow retained for reproducibility
-src/scenarios/                 Pure scenario calculations and read-only repository
-src/forecast_tomorrow.py       Production-style live inference CLI
-models/                        Production models and metadata
-outputs/forecasts/             Small public latest-forecast outputs
+src/models/                    Reproducible training workflow
+src/scenarios/                 Pure scenario calculations + read-only repository
+src/forecast_tomorrow.py       Production-style day-ahead inference CLI
+models/                        Saved production models + metadata
+outputs/forecasts/             Latest public forecast outputs
 outputs/metrics/               Locked test metrics and predictions
-tests/                         Offline transformation, inference and app tests
-render.yaml                    Render service definition (not deployed)
+outputs/figures/               Validation figures used in this README
+tests/                         Offline forecasting, scenario and app tests
 .github/workflows/             Prepared daily forecast automation
+render.yaml                    Render service definition
 ```
 
-Large raw archives, modelling datasets, caches, and general generated outputs remain ignored.
-
-## Run Locally
-
-PowerShell example:
+## Run locally
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-```
-
-Generate or replay a day-ahead forecast:
-
-```powershell
 python -m src.forecast_tomorrow
-python -m src.forecast_tomorrow --issue-date 2026-08-09
-```
-
-Launch the dashboard:
-
-```powershell
 python app.py
 ```
 
-Open `http://127.0.0.1:8050`. A Linux deployment can start the app with `gunicorn app:server`.
+Then open `http://127.0.0.1:8050`.
 
-The committed Scenario Explorer database contains no secrets and is opened read-only by the Dash application. The offline scripts under `scripts/` remain responsible for database creation and validated default-result population.
-
-The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, scikit-learn 1.9.0, XGBoost 3.4.0, and joblib 1.5.3. The solar estimator uses lossless joblib lzma level-3 compression; prediction equivalence and packaging details are recorded in `docs/model_packaging.md`.
-
-## Testing
-
-Run all offline tests with:
+Run the tests with:
 
 ```powershell
 python -m pytest -q
 ```
 
-Routine tests use mocked API payloads where network behaviour matters. Importing or navigating the Dash app does not call Open-Meteo or NESO.
-
-## Deployment Preparation
-
-`render.yaml` defines the Python web service, health check, and `gunicorn app:server` start command used by the hosted dashboard. The prepared GitHub Actions workflow uses two UTC schedules plus a `Europe/London` local-hour gate so only one daily run proceeds across GMT/BST. It persists only the small dashboard forecast CSV and summary JSON.
-
-The compressed 99,540,687-byte solar artefact is below GitHub's normal per-file limit, so Git LFS is not required. The workflow uses ordinary checkout and does not stage raw live weather responses.
+The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, scikit-learn 1.9.0, XGBoost 3.4.0 and joblib 1.5.3.
 
 ## Limitations
 
-- Weather uses ten representative GB locations rather than renewable-capacity-weighted grid cells.
-- Forecasts cover embedded wind and solar generation, not all transmission-connected renewable generation.
-- Accuracy varies by weather regime and individual day.
-- The application displays the most recently generated output; it does not claim continuous operational availability.
-- This is a portfolio and research demonstration, not a production trading forecast.
-- The 2050 scenarios are simplified annual portfolio comparisons, not forecasts, investment recommendations, power-flow studies, gas hydraulic studies, or NESO FES reproductions.
+- Weather uses ten representative GB locations instead of renewable-capacity-weighted grid cells.
+- Forecasts cover embedded wind and solar, not all transmission-connected renewable generation.
+- Forecast accuracy varies by day and weather regime.
+- The deployed app displays the most recently generated forecast output; it is a portfolio/research demonstration, not a production trading service.
+- The 2050 scenarios are simplified annual portfolio comparisons and remain assumption-driven.
+
+## Project status
+
+The forecasting pipeline, integrated validation views, live Dash application, SQLite-backed 2050 Scenario Explorer and Models/Data/Validation guide are implemented and deployed. Together they demonstrate a practical combination of **energy forecasting, machine learning, SQL, techno-economic modelling, scenario analysis, sensitivity analysis and transparent validation**.
 
 ## Disclaimer
 
-This project is for portfolio, educational, and research purposes. It is not trading, operational dispatch, or investment advice.
-
-## Project Status
-
-The forecasting pipeline and live Dash application are fully implemented and publicly deployed, and the SQLite-backed Scenario Explorer is implemented and tested. Together, the repository demonstrates Python, SQL/SQLite, Dash, Plotly, machine learning, techno-economic modelling, chronological evaluation, scenario analysis, and deterministic sensitivity analysis in one lightweight portfolio application.
+This project is for portfolio, educational and research purposes. It is not trading, operational dispatch or investment advice.
