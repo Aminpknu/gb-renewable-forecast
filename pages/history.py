@@ -12,8 +12,8 @@ from app_utils.figures import historical_generation_figure
 dash.register_page(
     __name__,
     path="/history",
-    name="History",
-    title="Historical Explorer | GB Renewable Forecast",
+    name="Forecast vs Actual",
+    title="Forecast vs Actual | GB Renewable Forecast",
     order=2,
 )
 
@@ -52,7 +52,7 @@ def layout() -> html.Div:
                     html.Div(
                         [
                             html.P("Untouched test period", className="eyebrow"),
-                            html.H1("Explore forecast behaviour by day"),
+                            html.H1("Forecast vs actual by day"),
                             html.P(
                                 "Historical explorer uses the locked June–August 2025 test period. Only dates with real archived-weather inputs and model predictions are available.",
                                 className="page-lede",

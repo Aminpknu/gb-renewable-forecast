@@ -678,6 +678,666 @@ select {
   margin: 0;
 }
 
+.methodology-guide {
+  gap: 42px;
+}
+
+.guide-part {
+  display: grid;
+  gap: 30px;
+  min-width: 0;
+  padding: 34px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  scroll-margin-top: 110px;
+}
+
+.forecast-part {
+  border-top: 6px solid var(--wind);
+  background: #f7fbfc;
+}
+
+.scenario-part {
+  border-top: 6px solid var(--solar);
+  background: #fffaf2;
+}
+
+.shared-part {
+  border-top: 6px solid var(--ink);
+  background: #f8fafc;
+}
+
+.part-divider {
+  margin: -34px -34px 0;
+  padding: 24px 34px;
+  border-radius: calc(var(--radius) + 3px) calc(var(--radius) + 3px) 0 0;
+}
+
+.part-divider h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.part-divider p:last-child {
+  max-width: 850px;
+  margin: 12px 0 0;
+  color: inherit;
+  opacity: 0.86;
+}
+
+.part-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.forecast-part .section-heading .eyebrow {
+  color: var(--wind);
+}
+
+.scenario-part .section-heading .eyebrow {
+  color: var(--solar);
+}
+
+.forecast-divider {
+  background: var(--wind);
+  color: #ffffff;
+}
+
+.scenario-divider {
+  background: var(--solar-soft);
+  color: #754b0b;
+}
+
+.shared-divider {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.guide-subsection {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  scroll-margin-top: 110px;
+}
+
+.guide-subsection > p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.scenario-equation-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.guide-section {
+  display: grid;
+  gap: 20px;
+  scroll-margin-top: 110px;
+}
+
+.guide-section .section-heading {
+  max-width: 820px;
+  margin-bottom: 0;
+}
+
+.guide-section .section-heading h2 {
+  margin: 5px 0 8px;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.roadmap-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+}
+
+.roadmap-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.roadmap-card.forecast-roadmap {
+  border-top-color: var(--wind);
+}
+
+.roadmap-card.scenario-roadmap {
+  border-top-color: var(--solar);
+}
+
+.roadmap-card h3 {
+  margin: 2px 0 10px;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.roadmap-card > p:not(.roadmap-part-label) {
+  margin: 0 0 18px;
+  color: var(--muted);
+}
+
+.roadmap-part-label {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.forecast-roadmap .roadmap-part-label {
+  color: var(--wind);
+}
+
+.scenario-roadmap .roadmap-part-label {
+  color: #9a620f;
+}
+
+.roadmap-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.roadmap-link:hover,
+.roadmap-link:focus-visible {
+  border-color: var(--wind);
+  color: var(--wind);
+  outline: none;
+}
+
+.scenario-roadmap .roadmap-link:hover,
+.scenario-roadmap .roadmap-link:focus-visible {
+  border-color: var(--solar);
+  color: #7d4f0b;
+}
+
+.roadmap-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--subtle);
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.guide-anchor-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px;
+}
+
+.guide-anchor-nav a {
+  padding: 7px 11px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.guide-anchor-nav a:hover,
+.guide-anchor-nav a:focus-visible {
+  background: var(--wind-soft);
+  color: var(--wind);
+  outline: none;
+}
+
+.guide-anchor-nav .forecast-nav {
+  color: var(--wind);
+}
+
+.guide-anchor-nav .scenario-nav {
+  color: #9a620f;
+}
+
+.guide-anchor-nav .scenario-nav:hover,
+.guide-anchor-nav .scenario-nav:focus-visible {
+  background: var(--solar-soft);
+  color: #7d4f0b;
+}
+
+.model-scope-grid,
+.workflow-grid,
+.guide-two-column,
+.guide-metric-grid,
+.pathway-grid,
+.equation-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.model-scope-grid,
+.workflow-grid,
+.guide-two-column,
+.guide-metric-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.model-scope-card,
+.workflow-card,
+.guide-subpanel,
+.guide-metric-card,
+.pathway-card,
+.equation-card,
+.limitation-panel,
+.provenance-class,
+.sensitivity-explainer,
+.repro-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.model-scope-card,
+.workflow-card,
+.guide-subpanel,
+.pathway-card,
+.limitation-panel,
+.provenance-class,
+.sensitivity-explainer,
+.repro-panel {
+  padding: 26px;
+}
+
+.model-scope-card {
+  border-top: 4px solid var(--wind);
+}
+
+.model-scope-card.scenario-scope-card {
+  border-top-color: var(--solar);
+}
+
+.model-scope-card h3,
+.workflow-card h3,
+.guide-subpanel h3,
+.pathway-card h3,
+.limitation-panel h3,
+.provenance-class h3,
+.sensitivity-explainer h3 {
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.model-scope-card p,
+.workflow-card p,
+.guide-subpanel p,
+.pathway-card p,
+.equation-card p,
+.limitation-panel li,
+.provenance-class p,
+.sensitivity-explainer p,
+.repro-panel li {
+  color: var(--muted);
+}
+
+.guide-card-kicker {
+  margin: 0 0 8px;
+  color: var(--wind) !important;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scenario-scope-card .guide-card-kicker {
+  color: var(--solar) !important;
+}
+
+.separation-note,
+.proxy-callout {
+  margin: 0;
+  padding: 16px 20px;
+  border-left: 4px solid var(--wind);
+  border-radius: 0 9px 9px 0;
+  background: var(--wind-soft);
+  color: var(--ink);
+  font-weight: 680;
+}
+
+.workflow-card {
+  min-width: 0;
+  text-align: left;
+}
+
+.workflow-card.forecast-workflow {
+  border-top: 4px solid var(--wind);
+}
+
+.workflow-card.scenario-workflow {
+  border-top: 4px solid var(--solar);
+}
+
+.workflow-step {
+  display: flex;
+  flex: 1 0 145px;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--canvas);
+  font-size: 0.88rem;
+  font-weight: 680;
+  text-align: center;
+}
+
+.workflow-track {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 7px;
+  scrollbar-width: thin;
+}
+
+.workflow-arrow {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.guide-details {
+  padding: 0;
+}
+
+.guide-details summary {
+  padding: 18px 22px;
+  cursor: pointer;
+  font-weight: 760;
+}
+
+.guide-details summary:focus-visible {
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 3px rgba(23, 107, 135, 0.22);
+  outline: none;
+}
+
+.guide-details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.guide-details > :not(summary) {
+  margin-right: 22px;
+  margin-left: 22px;
+}
+
+.guide-details > :last-child {
+  margin-bottom: 22px;
+}
+
+.guide-definition-grid {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.6fr) minmax(260px, 1.6fr) minmax(140px, 0.6fr) minmax(260px, 1.6fr);
+  gap: 12px 16px;
+}
+
+.guide-definition-grid dt {
+  font-weight: 760;
+}
+
+.guide-definition-grid dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.hero-equation {
+  margin: 22px 0;
+  font-size: 1.05rem;
+}
+
+.guide-metric-card {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px;
+}
+
+.guide-metric-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 5px;
+  content: "";
+}
+
+.guide-metric-card.wind-accent::before {
+  background: var(--wind);
+}
+
+.guide-metric-card.solar-accent::before {
+  background: var(--solar);
+}
+
+.forecast-part .guide-metric-card.solar-accent::before {
+  background: var(--wind);
+}
+
+.guide-metric-head,
+.guide-metric-meta,
+.guide-link-row,
+.pathway-shares,
+.technology-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.guide-metric-head {
+  justify-content: space-between;
+}
+
+.guide-metric-head span,
+.pathway-shares span,
+.technology-tags span {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.guide-metric-value {
+  margin: 18px 0 10px;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.guide-metric-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.guide-metric-meta span + span::before {
+  margin-right: 10px;
+  color: var(--line);
+  content: "|";
+}
+
+.equation-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.equation-card {
+  padding: 20px;
+  box-shadow: none;
+}
+
+.equation-card h4 {
+  margin: 0 0 8px;
+}
+
+.equation-markdown {
+  overflow-x: auto;
+  color: var(--ink);
+}
+
+.symbol-note {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+}
+
+.validation-section {
+  padding: 30px;
+  border-radius: var(--radius);
+  background: #edf8f2;
+}
+
+.validation-callout,
+.trust-panel {
+  padding: 22px 24px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.validation-callout p:first-child {
+  margin-top: 0;
+}
+
+.guide-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.guide-text-link {
+  color: var(--wind);
+  font-weight: 720;
+}
+
+.trust-panel h3 {
+  margin-top: 0;
+}
+
+.trust-checklist {
+  columns: 2;
+  column-gap: 40px;
+  padding-left: 20px;
+}
+
+.trust-checklist li {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+
+.compact-splits {
+  max-width: 620px;
+  margin: 22px 0 0;
+}
+
+.pathway-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pathway-card {
+  border-top: 4px solid var(--solar);
+}
+
+.pathway-shares {
+  margin-bottom: 15px;
+}
+
+.pathway-shares strong,
+.pathway-shares span {
+  font-size: 0.78rem;
+}
+
+.scenario-equations {
+  margin-top: 18px;
+}
+
+.sensitivity-explainer {
+  border-left: 4px solid var(--solar);
+}
+
+.provenance-class.source-informed {
+  border-top: 4px solid var(--wind);
+}
+
+.provenance-class.illustrative {
+  border-top: 4px solid var(--solar);
+}
+
+.scenario-part .provenance-class.source-informed {
+  border-top-color: var(--solar);
+}
+
+.provenance-table {
+  min-width: 1380px;
+  font-size: 0.78rem;
+}
+
+.provenance-table th,
+.provenance-table td,
+.provenance-table th:nth-child(2),
+.provenance-table td:nth-child(2) {
+  text-align: left;
+  white-space: normal;
+  vertical-align: top;
+}
+
+.limitation-panel ul,
+.repro-list {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+
+.forecast-limitations {
+  border-top: 4px solid var(--wind);
+}
+
+.scenario-limitations {
+  border-top: 4px solid var(--solar);
+}
+
+.proxy-callout {
+  border-left-color: var(--solar);
+  background: var(--solar-soft);
+}
+
+.technology-tags {
+  margin-bottom: 20px;
+}
+
+.technology-tags span {
+  background: var(--wind-soft);
+  color: var(--wind);
+}
+
+.shared-part .technology-tags span {
+  background: #e9eef3;
+  color: var(--ink);
+}
+
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -719,6 +1379,20 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .pathway-grid,
+  .guide-definition-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roadmap-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .roadmap-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
   .date-control {
     max-width: 340px;
   }
@@ -754,6 +1428,35 @@ select {
   .scenario-context-grid,
   .assumption-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .model-scope-grid,
+  .workflow-grid,
+  .guide-two-column,
+  .guide-metric-grid,
+  .pathway-grid,
+  .equation-grid,
+  .guide-definition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-checklist {
+    columns: 1;
+  }
+
+  .validation-section {
+    margin: 0 -8px;
+    padding: 22px 16px;
+  }
+
+  .guide-part {
+    margin: 0 -8px;
+    padding: 24px 16px;
+  }
+
+  .part-divider {
+    margin: -24px -16px 0;
+    padding: 22px 16px;
   }
 
   .scenario-toolbar {

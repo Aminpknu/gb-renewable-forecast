@@ -29,9 +29,9 @@ def health_check() -> tuple[str, int]:
 NAVIGATION = [
     ("Forecast", "/"),
     ("Performance", "/performance"),
-    ("History", "/history"),
+    ("Forecast vs Actual", "/history"),
     ("Scenarios", "/scenarios"),
-    ("Methodology", "/methodology"),
+    ("Models, Data & Validation", "/methodology"),
 ]
 
 app.layout = html.Div(
