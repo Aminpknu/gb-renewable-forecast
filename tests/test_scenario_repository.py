@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.scenarios.repository import (
+    _connect_read_only,
     load_active_scenarios,
     load_adjustable_assumptions,
     load_scenario_assumptions,
@@ -157,3 +158,13 @@ def test_repository_reads_do_not_modify_database(scenario_database: Path) -> Non
     load_scenario_results(scenario_database)
 
     assert scenario_database.read_bytes() == before
+
+
+def test_repository_connection_enforces_sqlite_read_only_mode(
+    scenario_database: Path,
+) -> None:
+    """The deployed repository connection must reject database mutation."""
+
+    with _connect_read_only(scenario_database) as connection:
+        with pytest.raises(sqlite3.OperationalError, match="readonly"):
+            connection.execute("CREATE TABLE forbidden_write (value INTEGER)")

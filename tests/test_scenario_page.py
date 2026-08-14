@@ -54,6 +54,19 @@ def test_scenario_page_route_and_three_database_options(scenario_page) -> None:
     assert selector.value == scenario_page.default_scenario_id()
 
 
+def test_runtime_database_path_is_anchored_to_project_and_exists(scenario_page) -> None:
+    """The deployed page must not depend on the process working directory."""
+
+    expected = (
+        Path(scenario_page.__file__).resolve().parents[1]
+        / "data"
+        / "scenarios"
+        / "scenario_explorer.sqlite"
+    )
+    assert scenario_page.SCENARIO_DB_PATH == expected
+    assert scenario_page.SCENARIO_DB_PATH.is_file()
+
+
 def test_exactly_six_adjustable_controls_and_no_gas_lrvc(scenario_page) -> None:
     rendered = scenario_page.layout()
     control_ids = [

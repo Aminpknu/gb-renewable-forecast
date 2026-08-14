@@ -1,4 +1,4 @@
-"""Recruiter-friendly explanation of the leakage-safe methodology."""
+"""Recruiter-friendly explanation of both energy-analysis methodologies."""
 
 from dash import html
 
@@ -27,10 +27,10 @@ def layout() -> html.Div:
         [
             html.Div(
                 [
-                    html.P("Scientific design", className="eyebrow"),
-                    html.H1("A leakage-safe day-ahead forecasting workflow"),
+                    html.P("Transparent analytical design", className="eyebrow"),
+                    html.H1("Operational forecasting and strategic scenarios"),
                     html.P(
-                        "The methodology keeps the operational information set explicit while remaining reproducible and inspectable.",
+                        "The application contains two separate, reproducible analytical engines: leakage-safe day-ahead forecasting and an illustrative annual 2050 heat-transition model.",
                         className="page-lede",
                     ),
                 ],
@@ -113,6 +113,27 @@ def layout() -> html.Div:
                     ),
                     _section(
                         "07",
+                        "2050 heat and network scenarios",
+                        [
+                            html.P(
+                                "The Scenario Explorer applies an illustrative one-million-home boundary. Annual useful heat is allocated between electric and low-carbon-gas technologies using each pathway's stored shares; electricity demand divides electric useful heat by heat-pump COP, while gas demand divides gas useful heat by heating efficiency."
+                            ),
+                            html.P(
+                                "Energy costs use long-run variable costs (LRVCs). Technology investment is shown separately from annual costs and is annualised with a capital recovery factor using the stored discount rate and technology lifetime. Financial annual cost combines energy cost and annualised CAPEX; social annual cost adds the monetised carbon impact. Carbon value therefore changes social cost, not physical emissions."
+                            ),
+                            html.P(
+                                "Electricity peak demand and gas-network utilisation are strategic proxies. Gas utilisation is measured against an illustrative 80% gas-heat-share reference throughput; 100% does not mean the physical maximum capacity of the GB gas network. One-at-a-time sensitivity varies four inputs by ±20% while holding all others constant."
+                            ),
+                            html.P(
+                                "These annual scenarios are simplified adaptations informed by UK evidence. They are not forecasts, investment recommendations, power-flow or gas-hydraulic models, and do not reproduce NESO Future Energy Scenarios."
+                            ),
+                            html.P(
+                                "Published evidence informs the discount rate, carbon appraisal value, LRVC benchmarks, heat-pump COP and gas-heating efficiency. The portfolio boundary, heat demand, pathway shares, low-carbon-gas assumptions, technology costs and lifetimes, and peak-heat proxy remain explicitly illustrative."
+                            ),
+                        ],
+                    ),
+                    _section(
+                        "08",
                         "Limitations",
                         html.Ul(
                             [

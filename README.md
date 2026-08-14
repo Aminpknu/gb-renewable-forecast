@@ -1,6 +1,6 @@
 # GB Embedded Wind & Solar Day-Ahead Forecasting
 
-A reproducible Python forecasting system for Great Britain's **embedded** wind and solar generation. It combines official NESO generation and capacity data with leakage-safe ECMWF IFS HRES weather forecasts, produces every half-hour settlement period of the following UK calendar day, and presents operational outputs in a public-facing Plotly Dash application.
+A reproducible energy-analytics application combining two complementary capabilities: leakage-safe day-ahead forecasting of Great Britain's **embedded** wind and solar generation, and an interactive strategic explorer for simplified UK heat and energy-network transition pathways. The operational forecasting and annual 2050 scenario models remain separate analytical engines.
 
 ## Live Demo
 
@@ -11,6 +11,7 @@ The dashboard provides:
 - Half-hourly forecast values and capacity factors
 - Historical forecast-vs-actual performance
 - Locked out-of-sample model evaluation
+- An interactive UK Heat and Energy Network Transition Scenario Explorer
 - Methodology and data-source documentation
 
 > Note: The app is hosted on Render's free tier, so the first load after a period of inactivity may take around a minute while the service wakes up.
@@ -82,22 +83,53 @@ The Plotly Dash Pages application provides:
 
 - a live-output forecast page with KPI cards, an interactive chart, full settlement table, and CSV download;
 - a performance page sourced from locked untouched-test metrics;
-- a date-selectable historical explorer containing only real test dates; and
+- a date-selectable historical explorer containing only real test dates;
+- a SQLite-backed 2050 heat and energy-network Scenario Explorer; and
 - a recruiter-friendly methodology and limitations page.
 
 It supports 46-, 48-, and 50-settlement-period target days and exposes `server = app.server` for deployment.
+
+## UK Heat and Energy Network Transition Explorer
+
+The Scenario Explorer asks a separate strategic question: how might contrasting 2050 heat-decarbonisation pathways change annual cost, emissions, upfront investment, and illustrative network pressures for a portfolio of one million homes? It compares three simplified pathways—**Electrification-led**, **Whole-system hybrid**, and **Low-carbon gas-led**—without numerically coupling them to the day-ahead forecasting model.
+
+```text
+SQLite assumptions
+        |
+        v
+Read-only repository layer
+        |
+        v
+Python techno-economic calculations
+        |
+        v
+Dash controls
+        |
+        v
+KPI, comparison and sensitivity visualisation
+```
+
+The module reports financial annual cost, social annual cost, annual emissions, initial investment, an electricity-peak proxy, and a gas-network-utilisation proxy. Users can adjust electricity LRVC, low-carbon-gas cost, carbon value, discount rate, heat-pump CAPEX, and low-carbon-gas CAPEX. A deterministic one-at-a-time sensitivity varies four principal inputs by -20% and +20%, holding all other assumptions constant, and reports the change in social annual cost.
+
+Assumption provenance is explicit. Published evidence informs inputs such as the HM Treasury discount rate, DESNZ carbon appraisal value and LRVCs, heat-pump COP, and gas-heating efficiency. The one-million-home boundary, heat demand, pathway shares, low-carbon-gas cost and emissions factor, technology CAPEX and lifetimes, and peak-heat proxy are illustrative portfolio assumptions—not official forecasts. The scenarios are simplified adaptations informed by UK evidence and do not reproduce NESO Future Energy Scenarios.
+
+_A Scenario Explorer screenshot can be added here after the final application capture; no placeholder image is committed._
+
+The Scenario Explorer is a decision-support demonstration, not a forecast or investment recommendation. It is not a power-flow model, gas hydraulic model, network capacity assessment, or reproduction of NESO FES. In particular, 100% gas-network utilisation means 100% of the model's illustrative reference throughput, not the physical maximum capacity of the GB gas network.
 
 ## Repository Structure
 
 ```text
 app.py                         Dash entrypoint
-pages/                         Forecast, performance, history, methodology
+pages/                         Forecast, performance, history, scenarios, methodology
 app_utils/                     Cached loaders, figures, formatting and theme
 assets/styles.css              Responsive application styling
 config/weather_locations.json  Ten representative GB locations
+data/scenarios/                Small runtime SQLite scenario database
 src/data/                      NESO/weather ingestion and validation
 src/features/                  Shared training/inference features
 src/models/                    Training workflow retained for reproducibility
+src/scenarios/                 Pure scenario calculations and read-only repository
 src/forecast_tomorrow.py       Production-style live inference CLI
 models/                        Production models and metadata
 outputs/forecasts/             Small public latest-forecast outputs
@@ -132,7 +164,9 @@ Launch the dashboard:
 python app.py
 ```
 
-Open `http://127.0.0.1:8050`. A future Linux deployment can start the app with `gunicorn app:server`.
+Open `http://127.0.0.1:8050`. A Linux deployment can start the app with `gunicorn app:server`.
+
+The committed Scenario Explorer database contains no secrets and is opened read-only by the Dash application. The offline scripts under `scripts/` remain responsible for database creation and validated default-result population.
 
 The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, scikit-learn 1.9.0, XGBoost 3.4.0, and joblib 1.5.3. The solar estimator uses lossless joblib lzma level-3 compression; prediction equivalence and packaging details are recorded in `docs/model_packaging.md`.
 
@@ -148,7 +182,7 @@ Routine tests use mocked API payloads where network behaviour matters. Importing
 
 ## Deployment Preparation
 
-`render.yaml` defines a free-plan-compatible Python web service with a health check and `gunicorn app:server` start command; it has not been deployed. The prepared GitHub Actions workflow uses two UTC schedules plus a `Europe/London` local-hour gate so only one daily run proceeds across GMT/BST. It persists only the small dashboard forecast CSV and summary JSON.
+`render.yaml` defines the Python web service, health check, and `gunicorn app:server` start command used by the hosted dashboard. The prepared GitHub Actions workflow uses two UTC schedules plus a `Europe/London` local-hour gate so only one daily run proceeds across GMT/BST. It persists only the small dashboard forecast CSV and summary JSON.
 
 The compressed 99,540,687-byte solar artefact is below GitHub's normal per-file limit, so Git LFS is not required. The workflow uses ordinary checkout and does not stage raw live weather responses.
 
@@ -159,6 +193,7 @@ The compressed 99,540,687-byte solar artefact is below GitHub's normal per-file 
 - Accuracy varies by weather regime and individual day.
 - The application displays the most recently generated output; it does not claim continuous operational availability.
 - This is a portfolio and research demonstration, not a production trading forecast.
+- The 2050 scenarios are simplified annual portfolio comparisons, not forecasts, investment recommendations, power-flow studies, gas hydraulic studies, or NESO FES reproductions.
 
 ## Disclaimer
 
@@ -166,4 +201,4 @@ This project is for portfolio, educational, and research purposes. It is not tra
 
 ## Project Status
 
-Stages 1–7 are complete. Stage 8 adds the tested local Dash application, lossless model packaging, and deployment/automation preparation. No GitHub remote, external deployment, SQL service, or paid cloud resource has been created.
+The forecasting pipeline, live-output Dash application, and SQLite-backed Scenario Explorer are implemented and tested. The repository demonstrates Python, SQL/SQLite, Dash, Plotly, machine learning, techno-economic modelling, chronological evaluation, scenario analysis, and deterministic sensitivity analysis in one lightweight portfolio application.
