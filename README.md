@@ -3,7 +3,7 @@
 [![Live App](https://img.shields.io/badge/Live%20App-Render-46E3B7?logo=render&logoColor=white)](https://gb-renewable-forecast.onrender.com)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Dash](https://img.shields.io/badge/Dash-Plotly-3F4F75?logo=plotly&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-100%20passing-2E7D32)
+![Tests](https://img.shields.io/badge/tests-102%20passing-2E7D32)
 
 A deployed energy-analytics portfolio combining two complementary capabilities:
 
@@ -39,7 +39,7 @@ The two models share one application but remain **separate analytical engines**.
 flowchart LR
     subgraph A["Part A — Day-ahead renewable forecasting"]
         A1[ECMWF archived/live forecasts] --> A2[Leakage-safe features]
-        A2 --> A3[Wind: XGBoost<br/>Solar: ExtraTrees]
+        A2 --> A3[Wind: spatial XGBoost<br/>Solar: spatial XGBoost]
         A3 --> A4[Predicted capacity factor]
         A4 --> A5[NESO embedded capacity]
         A5 --> A6[Day-ahead generation in MW]
@@ -64,8 +64,8 @@ The production convention is:
 - weather run: issue-date **00 UTC ECMWF IFS HRES**;
 - target: the following local calendar day;
 - resolution: **30 minutes**, including 46-, 48- and 50-period daylight-saving days;
-- wind model: **XGBoost**;
-- solar model: **ExtraTrees**.
+- wind model: **XGBoost** with 10-location wind-speed and direction features;
+- solar model: **XGBoost** with 10-location radiation and cloud-cover features.
 
 The models predict capacity factor first, then convert it to MW using official embedded capacity:
 
@@ -77,12 +77,12 @@ where \(\hat{G}_t\) is predicted generation in MW, \(\widehat{CF}_t\) is predict
 
 ### Locked test performance
 
-The selected models were chosen on the chronological validation period. The results below come from the previously untouched **June–August 2025 test period** and were locked before production refitting.
+Candidate specifications were frozen after four expanding chronological development folds covering April 2024 to March 2026. The results below come from the locked **April–June 2026 test period** (90 usable target days) and were evaluated only after model selection.
 
 | Target | Model | Test MAE | Test R² | Skill vs monthly climatology |
 |---|---|---:|---:|---:|
-| Embedded wind generation | XGBoost | **296.6 MW** | **0.868** | **66.4% lower MAE** |
-| Embedded solar generation | ExtraTrees | **425.4 MW** | **0.955** | **42.0% lower MAE** |
+| Embedded wind generation | Spatial XGBoost | **239.1 MW** | **0.912** | **70.0% lower MAE** |
+| Embedded solar generation | Spatial XGBoost | **385.5 MW** | **0.974** | **58.0% lower MAE** |
 
 The application also lets users inspect individual test dates and compare the model prediction directly with the later observed NESO generation.
 
@@ -99,12 +99,13 @@ The application also lets users inspect individual test dates and compare the mo
 
 **Evaluation safeguards**
 
-- training, validation and test periods are chronological;
-- model selection uses validation data, while reported headline metrics use untouched test data;
+- all development folds and the locked test are chronological; there is no random split;
+- hyperparameter/model selection uses only expanding development folds, while headline metrics use the locked test;
 - archived weather forecasts are used for backtesting, not realised future weather;
-- monthly climatology is retained as a simple benchmark;
-- five unavailable official-source target dates, 6–10 August 2025, are documented rather than fabricated or backfilled;
-- locked test predictions remain committed and inspectable.
+- monthly half-hour climatology fitted on development data is retained as a simple benchmark;
+- five unavailable official-source target dates, 6–10 August 2025, plus the reproducible 24 June 2026 archive temperature gap are explicitly excluded instead of fabricated or substituted;
+- locked April–June 2026 predictions remain committed and inspectable.
+- An aborted first evaluator read occurred after candidate freeze and before any holdout metrics were produced; the incident and unchanged selection state are documented in `docs/locked_test_access_incident.json`.
 
 The system forecasts **embedded generation only**; it is not a forecast of all GB renewable output.
 
@@ -147,13 +148,13 @@ For the full assumptions register, equations, terminology and limitations, use t
 <details>
 <summary><strong>Chronological forecasting split and modelling archive</strong></summary>
 
-- Training: 1 April 2024 to 31 March 2025
-- Validation: 1 April 2025 to 31 May 2025
-- Untouched test: 1 June 2025 to 31 August 2025
-- Usable modelling archive: 1 April 2024 to 31 August 2025
-- Production fit: 24,624 half-hour rows across 513 available target days
+- Development archive: 1 April 2024 to 31 March 2026
+- Model selection: four expanding chronological development folds
+- Locked test: 1 April 2026 to 30 June 2026 (90 usable target days)
+- Full usable modelling archive for final refit: 1 April 2024 to 30 June 2026
+- Production fit: 39,120 half-hour rows across 815 available target days
 
-Five individual official-source exclusions, 6–10 August 2025, are documented in `data/raw/weather/excluded_target_dates.json`. No later model cycle, realised weather or synthetic rows were used to replace them.
+Five individual official-source exclusions, 6–10 August 2025, are retained from V1. Target date 24 June 2026 is additionally excluded because two independent retrievals of the required ECMWF run reproduced missing `temperature_2m` values at all ten locations. No realised weather or synthetic replacement was used.
 
 </details>
 
@@ -179,7 +180,7 @@ The forecast CLI and dashboard are intentionally separated. `python -m src.forec
 | Deployment | Render, gunicorn |
 | Automation | GitHub Actions workflow prepared for daily forecasting |
 
-The current repository test suite contains **100 passing offline tests**. Network-dependent behaviour is mocked where appropriate, and importing/navigating the Dash application does not call NESO or Open-Meteo.
+The V2 branch test suite contains **102 passing offline tests** and one conditional local-artifact parity test that is skipped when its ignored historical inputs are absent. Network-dependent behaviour is mocked where appropriate, and importing/navigating the Dash application does not call NESO or Open-Meteo.
 
 ## Repository map
 
@@ -234,7 +235,7 @@ The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, s
 
 ## Project status
 
-The forecasting pipeline, integrated validation views, live Dash application, SQLite-backed 2050 Scenario Explorer and Models/Data/Validation guide are implemented and deployed. Together they demonstrate a practical combination of **energy forecasting, machine learning, SQL, techno-economic modelling, scenario analysis, sensitivity analysis and transparent validation**.
+This branch is the **validated V2 release candidate**: spatial wind/solar forecasting, locked-test evidence, production inference integration, the SQLite-backed 2050 Scenario Explorer and the Models/Data/Validation guide are implemented and tested. The current public Render service is not changed by this branch until an explicit merge/deployment step. Together the project demonstrates **energy forecasting, machine learning, SQL, techno-economic modelling, scenario analysis, sensitivity analysis and transparent validation**.
 
 ## Disclaimer
 

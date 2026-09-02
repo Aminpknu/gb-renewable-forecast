@@ -26,6 +26,7 @@ from src.features.weather_features import (
     ordered_feature_matrix,
     settlement_frame_for_target_date,
 )
+from src.features.spatial_features import location_feature_columns
 
 
 def _ten_location_payload(run_date: str = "2025-01-15") -> list[dict[str, Any]]:
@@ -67,16 +68,19 @@ def test_model_metadata_and_required_model_files() -> None:
     assert live.WIND_MODEL_PATH.stat().st_size > 0
     assert live.SOLAR_MODEL_PATH.stat().st_size > 0
     assert metadata["wind_model"]["algorithm"] == "XGBoost"
-    assert metadata["solar_model"]["algorithm"] == "ExtraTrees"
+    assert metadata["solar_model"]["algorithm"] == "XGBoost"
 
 
 def test_feature_order_contract() -> None:
     metadata = load_model_metadata()
-    assert WIND_FEATURES == metadata["wind_model"]["features"]
-    assert SOLAR_FEATURES == metadata["solar_model"]["features"]
+    location_names = [location.name for location in load_weather_locations()]
+    spatial = location_feature_columns(location_names)
+    assert metadata["wind_model"]["features"][: len(WIND_FEATURES)] == WIND_FEATURES
+    assert metadata["solar_model"]["features"][: len(SOLAR_FEATURES)] == SOLAR_FEATURES
+    assert metadata["wind_model"]["features"][len(WIND_FEATURES) :] == spatial["wind"]
+    assert metadata["solar_model"]["features"][len(SOLAR_FEATURES) :] == spatial["solar"]
     columns = metadata["wind_model"]["features"] + [
-        column
-        for column in metadata["solar_model"]["features"]
+        column for column in metadata["solar_model"]["features"]
         if column not in metadata["wind_model"]["features"]
     ]
     frame = pd.DataFrame({column: [1.0] for column in columns})
@@ -157,28 +161,22 @@ def test_live_weather_parsing_with_mocked_fetch(monkeypatch: pytest.MonkeyPatch)
     assert not reused
 
 
-def test_capacity_parsing_prefers_target_then_latest() -> None:
+def test_capacity_parsing_prefers_target_then_latest_on_or_before_target() -> None:
     payload = {
         "success": True,
         "result": {
             "records": [
-                {
-                    "SETTLEMENT_DATE": "2026-08-08",
-                    "EMBEDDED_WIND_CAPACITY": "7000",
-                    "EMBEDDED_SOLAR_CAPACITY": "19000",
-                },
-                {
-                    "SETTLEMENT_DATE": "2026-08-10",
-                    "EMBEDDED_WIND_CAPACITY": "7100",
-                    "EMBEDDED_SOLAR_CAPACITY": "19100",
-                },
+                {"SETTLEMENT_DATE": "2026-08-08", "EMBEDDED_WIND_CAPACITY": "7000", "EMBEDDED_SOLAR_CAPACITY": "19000"},
+                {"SETTLEMENT_DATE": "2026-08-10", "EMBEDDED_WIND_CAPACITY": "7100", "EMBEDDED_SOLAR_CAPACITY": "19100"},
+                {"SETTLEMENT_DATE": "2026-09-09", "EMBEDDED_WIND_CAPACITY": "7200", "EMBEDDED_SOLAR_CAPACITY": "19200"},
             ]
         },
     }
     target = live.parse_neso_capacity_payload(payload, "2026-08-10")
-    latest = live.parse_neso_capacity_payload(payload, "2026-08-11")
-    assert target.wind_capacity_mw == latest.wind_capacity_mw == 7100
-    assert target.solar_capacity_mw == latest.solar_capacity_mw == 19100
+    historical = live.parse_neso_capacity_payload(payload, "2026-08-11")
+    assert target.wind_capacity_mw == historical.wind_capacity_mw == 7100
+    assert target.solar_capacity_mw == historical.solar_capacity_mw == 19100
+    assert target.capacity_source_date == historical.capacity_source_date == pd.Timestamp("2026-08-10").date()
     assert target.capacity_source == "NESO Daily Demand Update"
 
 
@@ -193,7 +191,7 @@ def test_capacity_fallback_has_explicit_provenance(monkeypatch: pytest.MonkeyPat
         "historical_fallback: local official NESO target dataset",
         pd.Timestamp("2026-06-30").date(),
     )
-    monkeypatch.setattr(live, "load_local_capacity_fallback", lambda: fallback)
+    monkeypatch.setattr(live, "load_local_capacity_fallback", lambda _target_date=None: fallback)
     with pytest.warns(RuntimeWarning, match="local official NESO"):
         selected = live.fetch_live_capacities(
             pd.Timestamp("2026-08-10").date(), session=FailedSession()  # type: ignore[arg-type]

@@ -80,7 +80,7 @@ models/*
 *.pkl
 *.pickle
 !models/wind_xgboost.joblib
-!models/solar_extratrees.joblib
+!models/solar_xgboost.joblib
 
 # Generated outputs; small examples may live elsewhere under outputs/
 outputs/figures/*

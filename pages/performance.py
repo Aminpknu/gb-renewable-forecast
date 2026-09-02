@@ -206,7 +206,7 @@ def _forecast_vs_actual_content() -> html.Div:
                             html.P("Untouched test period", className="eyebrow"),
                             html.H2("Forecast vs actual by day"),
                             html.P(
-                                "Historical explorer uses the locked June–August 2025 test period. Only dates with real archived-weather inputs and model predictions are available.",
+                                "Historical explorer uses the locked April–June 2026 V2 test period (90 usable target days). Only dates with real archived-weather inputs and frozen-model predictions are available.",
                                 className="page-lede",
                             ),
                         ]

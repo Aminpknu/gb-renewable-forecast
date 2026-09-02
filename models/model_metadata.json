@@ -1,11 +1,20 @@
 {
   "project": "GB Embedded Wind & Solar Day-Ahead Forecasting",
+  "model_version": "v2-spatial-2026-09",
   "production_training_period": {
     "start": "2024-04-01",
-    "end": "2025-08-31",
-    "rows": 24624,
-    "target_days": 513
+    "end": "2026-06-30",
+    "rows": 39120,
+    "target_days": 815
   },
+  "excluded_target_dates": [
+    "2025-08-06",
+    "2025-08-07",
+    "2025-08-08",
+    "2025-08-09",
+    "2025-08-10",
+    "2026-06-24"
+  ],
   "serialization_environment": {
     "python": "3.12.13",
     "numpy": "2.5.1",
@@ -14,6 +23,9 @@
     "xgboost": "3.4.0",
     "joblib": "1.5.3"
   },
+  "weather_feature_contract": "Aggregate V1 features plus deterministic location-resolved weather from the same ten representative GB sampling locations.",
+  "locked_test_period": "2026-04-01 to 2026-06-30; 90 usable days; 2026-06-24 excluded for reproducible archive temperature gap.",
+  "locked_test_access_incident": "See docs/locked_test_access_incident.json: first evaluator read aborted before any predictions or metrics; frozen candidate specifications and thresholds were unchanged.",
   "wind_model": {
     "algorithm": "XGBoost",
     "target": "wind_cf",
@@ -29,26 +41,69 @@
       "hour_sin",
       "hour_cos",
       "doy_sin",
-      "doy_cos"
+      "doy_cos",
+      "loc_wind_speed_ms__inverness",
+      "loc_wind_speed_ms__edinburgh",
+      "loc_wind_speed_ms__newcastle",
+      "loc_wind_speed_ms__manchester",
+      "loc_wind_speed_ms__leeds",
+      "loc_wind_speed_ms__birmingham",
+      "loc_wind_speed_ms__norwich",
+      "loc_wind_speed_ms__cardiff",
+      "loc_wind_speed_ms__bristol",
+      "loc_wind_speed_ms__london",
+      "loc_wind_dir_sin__inverness",
+      "loc_wind_dir_sin__edinburgh",
+      "loc_wind_dir_sin__newcastle",
+      "loc_wind_dir_sin__manchester",
+      "loc_wind_dir_sin__leeds",
+      "loc_wind_dir_sin__birmingham",
+      "loc_wind_dir_sin__norwich",
+      "loc_wind_dir_sin__cardiff",
+      "loc_wind_dir_sin__bristol",
+      "loc_wind_dir_sin__london",
+      "loc_wind_dir_cos__inverness",
+      "loc_wind_dir_cos__edinburgh",
+      "loc_wind_dir_cos__newcastle",
+      "loc_wind_dir_cos__manchester",
+      "loc_wind_dir_cos__leeds",
+      "loc_wind_dir_cos__birmingham",
+      "loc_wind_dir_cos__norwich",
+      "loc_wind_dir_cos__cardiff",
+      "loc_wind_dir_cos__bristol",
+      "loc_wind_dir_cos__london"
     ],
-    "locked_test_MAE_CF": 0.04490508521712993,
-    "locked_test_RMSE_CF": 0.06107222487846498,
-    "locked_test_R2": 0.8675568128452792,
-    "locked_test_MAE_MW": 296.6429929443603,
-    "locked_test_skill_vs_baseline_pct": 66.35995274455611
+    "hyperparameters": {
+      "n_estimators": 550,
+      "max_depth": 3,
+      "learning_rate": 0.09428992310409909,
+      "min_child_weight": 8,
+      "subsample": 0.9910290385201325,
+      "colsample_bytree": 0.8921594224896587,
+      "gamma": 0.015649818512970884,
+      "reg_alpha": 0.751225711073285,
+      "reg_lambda": 3.96840271989877
+    },
+    "locked_test_MAE_MW": 239.13237827290894,
+    "locked_test_RMSE_MW": 313.43656640782854,
+    "locked_test_R2": 0.9123862395540391,
+    "locked_test_bias_MW": 70.96568771310311,
+    "locked_test_median_daily_MAE_MW": 216.79021492647013,
+    "locked_test_p95_daily_MAE_MW": 431.73383896975616,
+    "holdout_improvement_vs_v1_current_pct": 13.636617144272925,
+    "locked_test_MAE_CF": 0.037265447759530765,
+    "locked_test_RMSE_CF": 0.04884471971448163,
+    "locked_test_skill_vs_baseline_pct": 69.96538675334416,
+    "locked_test_baseline_MAE_MW": 796.1893043504889,
+    "artifact": {
+      "file": "models/wind_xgboost.joblib",
+      "size_bytes": 502004,
+      "sha256": "cc5a29fd32879dbe5170d1646d02c39179b40f2e7b63b9cfcf9312e65cbbd9b0"
+    }
   },
   "solar_model": {
-    "algorithm": "ExtraTrees",
+    "algorithm": "XGBoost",
     "target": "solar_cf",
-    "serialization": {
-      "format": "joblib",
-      "compression": "lzma level 3",
-      "original_size_bytes": 337998881,
-      "compressed_size_bytes": 99540687,
-      "equivalence_sample_rows": 512,
-      "max_abs_prediction_difference": 0.0,
-      "note": "Lossless packaging of the same fitted estimator; no retraining or metric changes."
-    },
     "features": [
       "radiation_mean",
       "radiation_max",
@@ -59,13 +114,54 @@
       "hour_sin",
       "hour_cos",
       "doy_sin",
-      "doy_cos"
+      "doy_cos",
+      "loc_radiation_wm2__inverness",
+      "loc_radiation_wm2__edinburgh",
+      "loc_radiation_wm2__newcastle",
+      "loc_radiation_wm2__manchester",
+      "loc_radiation_wm2__leeds",
+      "loc_radiation_wm2__birmingham",
+      "loc_radiation_wm2__norwich",
+      "loc_radiation_wm2__cardiff",
+      "loc_radiation_wm2__bristol",
+      "loc_radiation_wm2__london",
+      "loc_cloud_pct__inverness",
+      "loc_cloud_pct__edinburgh",
+      "loc_cloud_pct__newcastle",
+      "loc_cloud_pct__manchester",
+      "loc_cloud_pct__leeds",
+      "loc_cloud_pct__birmingham",
+      "loc_cloud_pct__norwich",
+      "loc_cloud_pct__cardiff",
+      "loc_cloud_pct__bristol",
+      "loc_cloud_pct__london"
     ],
-    "locked_test_MAE_CF": 0.020228209912105093,
-    "locked_test_RMSE_CF": 0.037634425724564484,
-    "locked_test_R2": 0.9549972333413317,
-    "locked_test_MAE_MW": 425.4104243049358,
-    "locked_test_skill_vs_baseline_pct": 41.96800452536412
-  },
-  "important_note": "The locked test metrics were calculated before the production models were retrained on all usable data."
+    "hyperparameters": {
+      "n_estimators": 600,
+      "max_depth": 6,
+      "learning_rate": 0.03628598853080374,
+      "min_child_weight": 5,
+      "subsample": 0.8907375363268005,
+      "colsample_bytree": 0.600915218171642,
+      "gamma": 0.002440445441470148,
+      "reg_alpha": 5.682445434637739e-05,
+      "reg_lambda": 0.14279411164425024
+    },
+    "locked_test_MAE_MW": 385.4568414321373,
+    "locked_test_RMSE_MW": 717.5535093125698,
+    "locked_test_R2": 0.9736022231588878,
+    "locked_test_bias_MW": 90.97376977511378,
+    "locked_test_median_daily_MAE_MW": 369.65777610556006,
+    "locked_test_p95_daily_MAE_MW": 730.4560353155006,
+    "holdout_improvement_vs_v1_current_pct": 5.783546435116052,
+    "locked_test_MAE_CF": 0.01655130585463765,
+    "locked_test_RMSE_CF": 0.030816792305882322,
+    "locked_test_skill_vs_baseline_pct": 57.975154403722364,
+    "locked_test_baseline_MAE_MW": 917.2753041345934,
+    "artifact": {
+      "file": "models/solar_xgboost.joblib",
+      "size_bytes": 1346850,
+      "sha256": "f0de5dd41bf1c9ba6be0df9c96fb9ea92e8c4703511da828e3341243c53e2a73"
+    }
+  }
 }

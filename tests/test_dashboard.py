@@ -96,16 +96,10 @@ def test_forecast_summary_loader(tmp_path: Path):
 def test_historical_predictions_loader_and_real_date_selector():
     predictions = load_historical_predictions()
     dates = available_historical_dates(predictions)
-    assert dates[0] == "2025-06-01"
-    assert dates[-1] == "2025-08-31"
-    assert len(dates) == 87
-    assert not {
-        "2025-08-06",
-        "2025-08-07",
-        "2025-08-08",
-        "2025-08-09",
-        "2025-08-10",
-    }.intersection(dates)
+    assert dates[0] == "2026-04-01"
+    assert dates[-1] == "2026-06-30"
+    assert len(dates) == 90
+    assert "2026-06-24" not in dates
 
 
 def test_missing_forecast_produces_graceful_empty_state(tmp_path: Path):
@@ -146,9 +140,9 @@ def test_locked_dashboard_metrics_match_metadata_and_metric_file():
     payload = performance_metric_payload()
 
     assert payload["wind"]["model"] == "XGBoost"
-    assert payload["solar"]["model"] == "ExtraTrees"
-    assert payload["wind"]["mae_mw"] == pytest.approx(296.6429929443603)
-    assert payload["solar"]["mae_mw"] == pytest.approx(425.4104243049358)
+    assert payload["solar"]["model"] == "XGBoost"
+    assert payload["wind"]["mae_mw"] == pytest.approx(239.13237827290894)
+    assert payload["solar"]["mae_mw"] == pytest.approx(385.4568414321373)
     assert payload["wind"]["mae_mw"] == pytest.approx(metrics.loc["Wind", "MAE_MW"])
     assert payload["solar"]["mae_mw"] == pytest.approx(metrics.loc["Solar", "MAE_MW"])
     assert payload["wind"]["r2"] == metadata["wind_model"]["locked_test_R2"]

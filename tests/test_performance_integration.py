@@ -55,8 +55,8 @@ def test_performance_page_contains_both_views_and_locked_metrics() -> None:
 
     assert "Day-ahead Forecast Performance" in text
     assert tab_labels == ["Overall performance", "Forecast vs actual"]
-    assert "296.6 MW" in text
-    assert "425.4 MW" in text
+    assert "239.1 MW" in text
+    assert "385.5 MW" in text
     assert "Locked aggregate metrics" in text
     assert "Wind mean bias" in text
     assert "Solar mean bias" in text

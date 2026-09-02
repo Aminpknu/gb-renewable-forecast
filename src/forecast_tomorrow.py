@@ -49,7 +49,7 @@ from src.features.weather_features import (
 
 MODEL_DIRECTORY = PROJECT_ROOT / "models"
 WIND_MODEL_PATH = MODEL_DIRECTORY / "wind_xgboost.joblib"
-SOLAR_MODEL_PATH = MODEL_DIRECTORY / "solar_extratrees.joblib"
+SOLAR_MODEL_PATH = MODEL_DIRECTORY / "solar_xgboost.joblib"
 MODEL_METADATA_PATH = MODEL_DIRECTORY / "model_metadata.json"
 LIVE_WEATHER_CACHE = PROJECT_ROOT / "data" / "raw" / "weather" / "live"
 LOCAL_NESO_TARGETS = (
@@ -182,7 +182,13 @@ def parse_neso_capacity_payload(
         raise ValueError("NESO Daily Demand Update contained no valid positive capacities.")
     target = pd.Timestamp(target_date).date()
     target_rows = [row for row in rows if row["date"] == target]
-    selected = target_rows[-1] if target_rows else max(rows, key=lambda row: row["date"])
+    if target_rows:
+        selected = target_rows[-1]
+    else:
+        historical_rows = [row for row in rows if row["date"] <= target]
+        if not historical_rows:
+            raise ValueError("NESO Daily Demand Update contains no capacity record on or before the target date.")
+        selected = max(historical_rows, key=lambda row: row["date"])
     return CapacitySelection(
         selected["wind"],
         selected["solar"],
@@ -192,9 +198,10 @@ def parse_neso_capacity_payload(
 
 
 def load_local_capacity_fallback(
+    target_date: date | str | pd.Timestamp | None = None,
     path: Path = LOCAL_NESO_TARGETS,
 ) -> CapacitySelection:
-    """Load the latest valid local NESO capacities with explicit fallback provenance."""
+    """Load the latest valid local NESO capacities on or before a target date."""
     frame = pd.read_csv(
         path,
         usecols=[
@@ -211,8 +218,11 @@ def load_local_capacity_fallback(
         & frame["embedded_wind_capacity_mw"].gt(0)
         & frame["embedded_solar_capacity_mw"].gt(0)
     ].sort_values("settlement_date")
+    if target_date is not None:
+        target = pd.Timestamp(target_date).normalize()
+        valid = valid.loc[valid["settlement_date"].dt.normalize() <= target]
     if valid.empty:
-        raise ValueError("Local NESO target data contains no valid positive capacities.")
+        raise ValueError("Local NESO target data contains no valid positive capacity on or before the target date.")
     row = valid.iloc[-1]
     return CapacitySelection(
         float(row["embedded_wind_capacity_mw"]),
@@ -242,11 +252,11 @@ def fetch_live_capacities(
     except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError) as error:
         warnings.warn(
             f"NESO Daily Demand Update unavailable or invalid ({error}); using the "
-            "latest capacity in the local official NESO dataset.",
+            "latest capacity on or before the target date in the local official NESO dataset.",
             RuntimeWarning,
             stacklevel=2,
         )
-        return load_local_capacity_fallback()
+        return load_local_capacity_fallback(target_date)
 
 
 def clip_capacity_factor(values: Any) -> np.ndarray:

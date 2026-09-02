@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 
 from src.data.settlement import construct_settlement_timestamps, expected_period_count
+from src.data.weather_config import load_weather_locations
+from src.features.spatial_features import build_spatial_weather_features, location_feature_columns
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL_METADATA_PATH = PROJECT_ROOT / "models" / "model_metadata.json"
@@ -206,11 +208,17 @@ def build_half_hour_features(
     if interpolated.duplicated(["location_name", "valid_time_utc"]).any():
         raise ValueError("Duplicate location/valid-time weather rows detected.")
     aggregate = aggregate_weather_locations(interpolated)
+    location_names = [location.name for location in load_weather_locations()]
+    spatial = build_spatial_weather_features(interpolated, location_names)
     result = target_settlements.merge(
         aggregate, on="valid_time_utc", how="left", validate="one_to_one"
     )
+    result = result.merge(spatial, on="valid_time_utc", how="left", validate="one_to_one")
     result = add_calendar_features(result)
-    all_features = sorted(set(WIND_FEATURES + SOLAR_FEATURES))
+    spatial_columns = location_feature_columns(location_names)
+    all_features = sorted(
+        set(WIND_FEATURES + SOLAR_FEATURES + spatial_columns["wind"] + spatial_columns["solar"])
+    )
     if result[all_features].isna().any().any():
         raise ValueError("Feature matrix contains missing values.")
     return result

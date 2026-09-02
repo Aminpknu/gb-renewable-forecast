@@ -1,0 +1,9 @@
+{
+  "status": "ABORTED_FIRST_LOCKED_TEST_EVALUATION_NO_METRICS_OBSERVED",
+  "date": "2026-09-02",
+  "cause": "Evaluator model-family dispatch did not map solar_current_fixed to ExtraTrees.",
+  "what_happened": "Final candidate freeze verification passed and locked aggregate/spatial CSVs were loaded. Evaluation then aborted before the first model fit/metric result because make_model raised ValueError for solar_current_fixed.",
+  "selection_leakage": false,
+  "reason": "No holdout prediction, performance metric, ranking, promotion decision, or model-selection feedback was produced or observed before the exception. Candidate specifications and confirmation thresholds remained frozen and unchanged.",
+  "remediation": "Fix model-family dispatch only, preserve frozen candidates and thresholds unchanged, then rerun deterministic evaluation and disclose this second file read in final methodology records."
+}
