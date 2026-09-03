@@ -44,5 +44,10 @@
       "locked_test_skill_vs_baseline_pct": 57.975154403722364,
       "locked_test_baseline_MAE_MW": 917.2753041345934
     }
+  },
+  "spatial_allocation": {
+    "zones": 10,
+    "method": "REPD capacity proxy multiplied by location weather signal and reconciled to national V2 MW",
+    "output": "latest_spatial_forecast.csv"
   }
 }

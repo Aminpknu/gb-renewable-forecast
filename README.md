@@ -65,7 +65,8 @@ The production convention is:
 - target: the following local calendar day;
 - resolution: **30 minutes**, including 46-, 48- and 50-period daylight-saving days;
 - wind model: **XGBoost** with 10-location wind-speed and direction features;
-- solar model: **XGBoost** with 10-location radiation and cloud-cover features.
+- solar model: **XGBoost** with 10-location radiation and cloud-cover features;
+- companion output: a ten-zone **indicative spatial allocation** reconciled exactly to the national wind/solar forecast.
 
 The models predict capacity factor first, then convert it to MW using official embedded capacity:
 
@@ -74,6 +75,13 @@ The models predict capacity factor first, then convert it to MW using official e
 \]
 
 where \(\hat{G}_t\) is predicted generation in MW, \(\widehat{CF}_t\) is predicted capacity factor and \(K_t\) is embedded capacity in MW.
+
+
+### Indicative ten-zone spatial allocation
+
+The production CLI also writes `outputs/forecasts/latest_spatial_forecast.csv`. This is **not** ten independently trained city-generation models. The national V2 wind and solar forecasts remain authoritative. For each half-hour, the national totals are allocated across Inverness, Edinburgh, Newcastle, Manchester, Leeds, Birmingham, Norwich, Cardiff, Bristol and London using fixed DESNZ REPD operational-capacity proxy weights multiplied by the corresponding issue-time weather signal, then normalised so all ten zones sum exactly back to the national forecast.
+
+REPD is used only as a spatial weighting proxy; it is not treated as a complete embedded-capacity census. Wind uses the local 100 m wind-speed cubed as a relative meteorological-power signal, while solar uses local instantaneous shortwave radiation. The output is intended for spatial screening and downstream flexibility allocation, not as validated local generation or network-node forecasts.
 
 ### Locked test performance
 
@@ -138,6 +146,7 @@ In particular, 100% gas-network utilisation means 100% of the model's illustrati
 - **Generation and capacity:** National Energy System Operator (NESO) Historic Demand Data and Daily Demand Update.
 - **Weather:** ECMWF IFS HRES 9 km through the Open-Meteo Single Runs API using `ecmwf_ifs`.
 - **Weather sampling:** ten fixed representative GB locations; they are not claimed to be renewable-capacity-weighted sites.
+- **Spatial allocation proxy:** DESNZ REPD July 2026 operational wind/solar project capacity, used only for relative zone weighting and reconciled back to NESO national totals.
 
 **Scenario analysis**
 
@@ -228,6 +237,7 @@ The saved models were verified with Python 3.12.13, NumPy 2.5.1, pandas 3.0.5, s
 ## Limitations
 
 - Weather uses ten representative GB locations instead of renewable-capacity-weighted grid cells.
+- The ten-zone output is a reconciled allocation proxy, not independently observed or validated city-level generation.
 - Forecasts cover embedded wind and solar, not all transmission-connected renewable generation.
 - Forecast accuracy varies by day and weather regime.
 - The deployed app displays the most recently generated forecast output; it is a portfolio/research demonstration, not a production trading service.

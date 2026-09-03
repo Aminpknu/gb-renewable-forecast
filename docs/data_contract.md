@@ -65,3 +65,9 @@ Saved model capacity-factor predictions are bounded to [0, 1] and converted to M
 The Stage 8 Plotly Dash application is a presentation layer over the small Stage 7 forecast outputs and locked historical evaluation files. Ordinary app imports and page navigation do not load the production estimators, call Open-Meteo, call NESO, regenerate forecasts, or alter locked metrics. Live inference remains the separate `python -m src.forecast_tomorrow` command.
 
 The UI derives its settlement table length from the forecast file and therefore supports 46-, 48-, and 50-period days. Historical date controls contain only dates present in the locked test predictions; documented source exclusions are not synthesized for visual continuity.
+
+## Spatial allocation output
+
+`outputs/forecasts/latest_spatial_forecast.csv` contains one row per `(settlement_period, zone)` for the same target day as `latest_forecast.csv`; therefore a valid file contains 10?46/48/50 rows. Required fields include the zone, wind/solar dynamic allocation shares, allocated wind/solar/total MW, and fixed wind/solar capacity-proxy shares. Within each settlement period, wind shares and solar shares each sum to one and the allocated MW values reconcile exactly to the national V2 forecast.
+
+Fixed weights are stored in `config/spatial_capacity_weights.csv`. They are derived from the July 2026 DESNZ REPD operational wind/solar project register and assigned to the nearest of the ten representative V2 weather locations. The companion manifest records source provenance and limitations. These are spatial proxy weights only; NESO embedded capacity remains authoritative for national totals.

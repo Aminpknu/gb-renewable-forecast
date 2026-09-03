@@ -42,10 +42,12 @@ from src.data.weather_config import (
 from src.data.weather_validation import validate_single_run
 from src.features.weather_features import (
     build_half_hour_features,
+    interpolate_hourly_weather,
     load_model_metadata,
     ordered_feature_matrix,
     settlement_frame_for_target_date,
 )
+from src.features.spatial_allocation import build_spatial_forecast_allocation
 
 MODEL_DIRECTORY = PROJECT_ROOT / "models"
 WIND_MODEL_PATH = MODEL_DIRECTORY / "wind_xgboost.joblib"
@@ -56,6 +58,7 @@ LOCAL_NESO_TARGETS = (
     PROJECT_ROOT / "data" / "interim" / "neso_embedded_wind_solar_targets.csv"
 )
 FORECAST_DIRECTORY = PROJECT_ROOT / "outputs" / "forecasts"
+SPATIAL_LATEST_PATH = FORECAST_DIRECTORY / "latest_spatial_forecast.csv"
 FIGURE_PATH = PROJECT_ROOT / "outputs" / "figures" / "latest_day_ahead_forecast.png"
 
 NESO_DAILY_DEMAND_ENDPOINT = "https://api.neso.energy/api/3/action/datastore_search"
@@ -449,12 +452,22 @@ def run_live_forecast(
         features, context, capacity, wind_pred_cf, solar_pred_cf
     )
     summary = build_forecast_summary(forecast, context, capacity, metadata)
+    weather_30m = interpolate_hourly_weather(weather, settlements)
+    spatial = build_spatial_forecast_allocation(weather_30m, forecast)
+    summary["spatial_allocation"] = {
+        "zones": int(spatial["zone"].nunique()),
+        "method": "REPD capacity proxy multiplied by location weather signal and reconciled to national V2 MW",
+        "output": "latest_spatial_forecast.csv",
+    }
 
     dated_path = FORECAST_DIRECTORY / f"forecast_{context.target_date.isoformat()}.csv"
     latest_path = FORECAST_DIRECTORY / "latest_forecast.csv"
     summary_path = FORECAST_DIRECTORY / "latest_forecast_summary.json"
+    spatial_dated_path = FORECAST_DIRECTORY / f"spatial_forecast_{context.target_date.isoformat()}.csv"
     _atomic_write_csv(dated_path, forecast)
     _atomic_write_csv(latest_path, forecast)
+    _atomic_write_csv(spatial_dated_path, spatial)
+    _atomic_write_csv(SPATIAL_LATEST_PATH, spatial)
     _atomic_write_json(summary_path, summary)
     _save_forecast_figure(forecast)
     return forecast, summary
